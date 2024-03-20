@@ -7,6 +7,7 @@ from pyquaternion import Quaternion
 from base_class import BaseDataset
 from dataset_util.data_struct import Box, KITTI_PointCloud
 
+# p = KITTI_Util("", "traintiny", coordinate_mode="velodyne", preloading=True)
 
 class KITTI_Util(BaseDataset):
     def __init__(self, path, split, **kwargs):

@@ -5,6 +5,9 @@ from pyquaternion import Quaternion
 from dataset_util.base_class import BasePointCloud
 
 
+# p = WaterScene_PointCloud.fromfile("./radar/1664692937.43531.csv")
+# print(p.points)
+
 class WaterScene_PointCloud(BasePointCloud):
     """适用于 WaterScene 数据集的点云数据结构
     """

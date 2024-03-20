@@ -4,7 +4,7 @@ import torch
 
 class BaseDataset:
 	def __init__(self, path, split, **kwargs):
-		self._path = path
+		self.path = path
 		self._split = split
 		self._coordinate_mode = kwargs.get("coordinate_mode", "velogyne")
 		self._preload_offset = kwargs.get("preload_offset", -1)
@@ -39,7 +39,7 @@ class BasePointCloud:
 
 	@property
 	def n(self):
-		return self.points.shape[1]
+		return self._dim
 
 	def subsample(self, ratio):
 		"""使用随机采样法下采样。
