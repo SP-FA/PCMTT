@@ -11,6 +11,10 @@ class BaseDataset:
 		self._preloading = kwargs.get('preloading', False)
 
 	@property
+	def num_scenes(self):
+		raise NotImplementedError
+
+	@property
 	def num_trajecktory(self):
 		raise NotImplementedError
 
