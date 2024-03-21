@@ -67,7 +67,8 @@ class KITTI_PointCloud(BasePointCloud):
             <np.array[4, n], np.float>
         """
         scan = np.fromfile(fileName, dtype=np.float32)
-        points = scan.reshape((-1, 5))[:, :4]
+        print(scan.shape)
+        points = scan.reshape((-1, 4))[:, :4]
         return points.T
 
     ################################## affine ###################################
@@ -133,13 +134,13 @@ class Box:
     def __repr__(self):
         repr_str = 'label: {}, score: {:.2f}, xyz: [{:.2f}, {:.2f}, {:.2f}], wlh: [{:.2f}, {:.2f}, {:.2f}], ' \
                    'rot axis: [{:.2f}, {:.2f}, {:.2f}], ang(degrees): {:.2f}, ang(rad): {:.2f}, ' \
-                   'vel: {:.2f}, {:.2f}, {:.2f}, name: {}'
+                   'vel: {:.2f}, {:.2f}, {:.2f}'
         return repr_str.format(self.label, self.score,
                                self.center[0], self.center[1], self.center[2],
                                self.wlh[0], self.wlh[1], self.wlh[2],
                                self.orient.axis[0], self.orient.axis[1], self.orient.axis[2], self.orient.degrees,
                                self.orient.radians,
-                               self.veloc[0], self.veloc[1], self.veloc[2], self.name)
+                               self.veloc[0], self.veloc[1], self.veloc[2])
 
     def encode(self):
         """Encodes the box instance to a JSON-friendly vector representation.
@@ -148,12 +149,11 @@ class Box:
             List[float * 16]
         """
         return self.center.tolist() + self.wlh.tolist() + self.orient.elements.tolist() + [self.label] + [
-            self.score] + self.veloc.tolist() + [self.name]
+            self.score] + self.veloc.tolist()
 
     @classmethod
     def decode(cls, data):
-        return Box(data[0:3], data[3:6], Quaternion(data[6:10]), label=data[10], score=data[11], veloc=data[12:15],
-                   name=data[15])
+        return Box(data[0:3], data[3:6], Quaternion(data[6:10]), label=data[10], score=data[11], veloc=data[12:15])
 
     @property
     def rotation_matrix(self):

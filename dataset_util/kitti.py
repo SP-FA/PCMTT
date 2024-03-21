@@ -4,7 +4,7 @@ import os
 import pickle
 from collections import defaultdict
 from pyquaternion import Quaternion
-from base_class import BaseDataset
+from dataset_util.base_class import BaseDataset
 from dataset_util.data_struct import Box, KITTI_PointCloud
 
 # p = KITTI_Util("", "traintiny", coordinate_mode="velodyne", preloading=True)
@@ -90,7 +90,8 @@ class KITTI_Util(BaseDataset):
                 df_traj = df_traj.reset_index(drop=True)
                 trajecktory = [traj for id, traj in df_traj.iterrows()]
                 traj_list.append(trajecktory)
-                traj_len_list.append(len(traj_list))
+                traj_len_list.append(len(trajecktory))
+            print(traj_len_list)
         return traj_list, traj_len_list
 
     def _get_frames_from_target(self, target):

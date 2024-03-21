@@ -35,8 +35,8 @@ class BasePointCloud:
 		Args:
 			points (np.array[dim, n]) # dim 是点云维度
 		"""
-		if dim != points.shape[1]:
-			raise ValueError(f"{points.shape = } not matched at dim=0, which need {dim}")
+		if dim != points.shape[0]:
+			raise ValueError(f"{points.shape = } not matched at dim 0, which need {dim}")
 
 		self.points = points
 		self._dim = dim
