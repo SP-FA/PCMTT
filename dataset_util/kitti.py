@@ -105,7 +105,7 @@ class KITTI_Util(BaseDataset):
             target (DataFrame): 某一帧中的一个目标
 
         Returns:
-            Dict{
+            Dict {
                 "pc": ,
                 "3d_bbox": ,
                 "meta": DataFrame
