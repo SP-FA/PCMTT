@@ -13,7 +13,7 @@ class KalmanFilter(nn.Module):
         x0 Tensor[3, 1]: x, y, z
         P0 Tensor[3, 3]: 先验估计协方差
     """
-    def __init__(self, x0, P0=torch.eye(3), B=0.01, H=torch.eye(3), Q=0.1, R=1):
+    def __init__(self):
 
         super(KalmanFilter, self).__init__()
         self.A = nn.Parameter(torch.eye(3), requires_grad=False)

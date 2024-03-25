@@ -43,34 +43,6 @@ class DualAttention(nn.Module):
         return sasc_output, sa_output, sc_output
 
 
-class CrossAttention(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer=nn.BatchNorm1d):
-        super(DualAttention, self).__init__()
-        inter_channels = in_channels // 4
-        self.conv1 = nn.Sequential(nn.Conv1d(in_channels, inter_channels, 3, padding=1, bias=False),
-                                    norm_layer(inter_channels),
-                                    nn.ReLU())
-
-        self.conv2 = nn.Sequential(nn.Conv1d(in_channels, inter_channels, 3, padding=1, bias=False),
-                                    norm_layer(inter_channels),
-                                    nn.ReLU())
-
-        self.sa = PositionAttention(inter_channels)
-        self.conv3 = nn.Sequential(nn.Conv1d(inter_channels, inter_channels, 3, padding=1, bias=False),
-                                    norm_layer(inter_channels),
-                                    nn.ReLU())
-
-        self.conv4 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
-
-    def forward(self, x1, x2):
-        feat1 = self.conv1(x1)
-        feat2 = self.conv2(x2)
-        sa_feat = self.sa(feat1, feat2)
-        sa_conv = self.conv3(sa_feat)
-        sa_output = self.conv4(sa_conv)
-        return sa_output
-
-
 class PositionAttention(nn.Module):
     def __init__(self, dim):
         super(PositionAttention, self).__init__()
@@ -86,8 +58,8 @@ class PositionAttention(nn.Module):
     def forward(self, x1, x2=None):
         """
         Args:
-            x1 (Tensor[B, C, P1]): q, v, Template
-            x2 (Tensor[B, C, P2]): k, SearchArea
+            x1 Tensor[B, C, P1]: q, v, Template
+            x2 Tensor[B, C, P2]: k, SearchArea
         """
         B, C, P1 = x1.size()
         q = self.Q(x1).view(B, -1, P1).permute(0, 2, 1)  # [B, P1, C]

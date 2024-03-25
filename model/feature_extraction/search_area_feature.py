@@ -1,5 +1,4 @@
 from torch import nn
-
 from model.attention.dual_attention import DualAttention
 from model.pointnet2.pointnet2 import Pointnet2
 
@@ -25,7 +24,7 @@ class SearchAreaFeatExtraction(nn.Module):
         """
         M = x.shape[1]
         xyz, feat, _ = self.pn2(x, [M // 2, M // 4, M // 8])  # feature: [B, 256, P2]
-        print(f"{xyz = }  {feat = }")
+        print(f"{xyz.shape = }  {feat.shape = }")
         return self.att(feat)  # [B, 256, P2]
 
 
