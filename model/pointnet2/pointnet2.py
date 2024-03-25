@@ -1,5 +1,5 @@
 """
-pointnet.py
+pointnet2.py
 Created by zenn at 2021/5/9 13:41
 """
 
