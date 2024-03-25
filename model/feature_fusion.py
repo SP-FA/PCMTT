@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from model.attention.cross_attention import CrossAttention
 from model.filter.kalman_filter import KalmanFilter
@@ -25,7 +26,13 @@ class FeatureFusion(nn.Module):
             ...
             # 用 kalman 预先把 xyz 剪裁一下，但是不知道会不会导致模型难以收敛，暂时先不启用
             # TODO: PRN with Kalman
+        # [B, P2, 4+1], [B, P2]
         predBox, predCls, vote_xyz, center_xyz = self.rpn(xyz, output)
         print(f"{predBox.shape = }  {predCls.shape = }  {vote_xyz.shape = }  {center_xyz.shape = }")
+
+        # bestBoxID = torch.argmax(predBox[:, 4])  # [B, 1]
+        # bestBox = predBox[bestBoxID]
+        # bestBoxCenter = center_xyz[bestBoxID]
+        # velo = self.get_velocity(xyz, bestBox)  # [B, 1]
         # TODO: predict and update kalman
         # TODO: get the final result with (prevB + output) / 2
