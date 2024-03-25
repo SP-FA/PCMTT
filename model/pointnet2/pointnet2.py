@@ -9,7 +9,7 @@ import torch.nn as nn
 from model.pointnet2.utils.pointnet2_modules import PointnetSAModule
 
 
-class Pointnet_Backbone(nn.Module):
+class Pointnet2(nn.Module):
     r"""
         PointNet2 with single-scale grouping
         Semantic segmentation network that uses feature propogation layers
@@ -23,7 +23,7 @@ class Pointnet_Backbone(nn.Module):
             return_intermediate: 是否返回所有结果
             input_channels: 除了 xyz 之外的维度数量
         """
-        super(Pointnet_Backbone, self).__init__()
+        super(Pointnet2, self).__init__()
         self.return_intermediate = return_intermediate
         self.SA_modules = nn.ModuleList()
         self.SA_modules.append(
