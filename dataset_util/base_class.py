@@ -68,6 +68,16 @@ class BasePointCloud:
 	# 	not_close = np.logical_not(np.logical_and(x, y))
 	# 	self.points = self.points[:, not_close]
 
+	def box_cloud(self, box: Box):
+		"""generate the BoxCloud for the given pc and box
+		Returns:
+			[N, 9]: The distance between each point and the box points
+		"""
+		corner = box.corners()  # [3, 8]
+		center = box.center.reshape(-1, 1)  # [3, 1]
+		boxPoints = np.concatenate([center, corner], axis=1)  # [3, 9]
+		return torch.cdist(self.points.T, boxPoints.T)  # [N, 9]
+
 	def points_in_box(self, box: Box, returnMask=False):
 		"""给定一个 Bounding box，返回在这个 box 内的点
 		Returns:
@@ -108,8 +118,8 @@ class BasePointCloud:
 		pointInBox.rotate(rotMat)
 		pointInBox.translate(trans)
 		if returnMask:
-			return pointInBox, includeIDs
-		return pointInBox
+			return pointInBox, pointInBox.box_cloud(box), includeIDs
+		return pointInBox, pointInBox.box_cloud(box)
 
 	def convert2Tensor(self):
 		return torch.from_numpy(self.points)
@@ -119,7 +129,7 @@ class BasePointCloud:
 		points = tensor.numpy()
 		return cls(points, points.shape[0])
 
-	################################## affine ###################################
+################################## affine ###################################
 
 	def translate(self, x):
 		for i in range(3):
