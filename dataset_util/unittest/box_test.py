@@ -3,7 +3,6 @@ import numpy as np
 from pyquaternion import Quaternion
 from dataset_util.data_struct import Box
 
-
 class MyTestCase(unittest.TestCase):
     def test_Box(self):
         q = Quaternion()
@@ -30,14 +29,12 @@ class MyTestCase(unittest.TestCase):
         print(b1.corners())
         print(b1.bottom_corners())
 
-
     def test_Box_affine(self):
         q = Quaternion()
         print(q.rotation_matrix)
         b1 = Box(np.array([1, 1, 1]), np.array([2, 2, 2]), q)
         b1.translate(np.array([1, 1, 1]))
         print(b1.corners())
-
 
 if __name__ == '__main__':
     unittest.main()

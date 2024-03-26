@@ -14,7 +14,7 @@ from dataset_util.data_struct import Box, WaterScene_PointCloud
 class WaterScene_Util(BaseDataset):
     def __init__(self, path, split, **kwargs):
         super().__init__(path, split, **kwargs)
-        self._WaterScene_root   = path
+        self._WaterScene_root = path
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}

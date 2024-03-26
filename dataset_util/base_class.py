@@ -13,7 +13,6 @@ class BaseDataset:
 	@property
 	def num_scenes(self):
 		raise NotImplementedError
-
 	@property
 	def num_trajecktory(self):
 		raise NotImplementedError

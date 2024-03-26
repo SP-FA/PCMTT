@@ -7,23 +7,25 @@ from pyquaternion import Quaternion
 from dataset_util.base_class import BaseDataset
 from dataset_util.data_struct import Box, KITTI_PointCloud
 
-# p = KITTI_Util("", "traintiny", coordinate_mode="velodyne", preloading=True)
-
-
 class KITTI_Util(BaseDataset):
     def __init__(self, path, split, **kwargs):
         super().__init__(path, split, **kwargs)
-        self._KITTI_root  = path
-        self._KITTI_velo  = os.path.join(path, "velodyne")
-        # self._KITTI_img = os.path.join(path, "image_02")
-        self._KITTI_label = os.path.join(path, "label_02")
+        self._KITTI_root = path
+        self._KITTI_velo = os.path.join(path, "velodyne")
+        # self._KITTI_img = os.path.join(path, "image_2")
+        self._KITTI_label = os.path.join(path, "label_2")
         self._KITTI_calib = os.path.join(path, "calib")
-        self._scene_list  = self._get_scene_list(split)
+        self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajecktory()
         if self._preloading:
             self._trainingSamples = self._load_data()
+
+
+    @property
+    def scenes_list(self):
+        return self._scene_list
 
     @property
     def num_scenes(self):
@@ -39,6 +41,7 @@ class KITTI_Util(BaseDataset):
 
     def num_frames_trajecktory(self, trajID):
         return self._traj_len_list[trajID]
+
 
     def frames(self, trajID, frameIDs):
         if self._preloading:
@@ -83,6 +86,7 @@ class KITTI_Util(BaseDataset):
                                     "alpha", "bbox_left", "bbox_top", "bbox_right", "bbox_bottom",
                                     "height", "width", "length", "x", "y", "z", "rotation_y"])
             df = df[df["type"] != 'DontCare']
+
             df.insert(loc=0, column="scene", value=scene)
             for trackID in df.track_id.unique():
                 df_traj = df[df["track_id"] == trackID]
@@ -188,3 +192,4 @@ class KITTI_Util(BaseDataset):
                 except ValueError:
                     pass
         return data
+

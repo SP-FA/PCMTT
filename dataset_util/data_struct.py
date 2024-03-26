@@ -4,7 +4,6 @@ from pyquaternion import Quaternion
 
 from dataset_util.base_class import BasePointCloud
 
-
 # p = WaterScene_PointCloud.fromfile("./radar/1664692937.43531.csv")
 # print(p.points)
 
@@ -32,7 +31,6 @@ class WaterScene_PointCloud(BasePointCloud):
         df = df[["x", "y", "z", "range", "azimuth", "elevation", "rcs", "doppler"]]
         points = df.to_numpy()
         return points.reshape((8, -1))
-
     # TODO: 归一化
 
 
