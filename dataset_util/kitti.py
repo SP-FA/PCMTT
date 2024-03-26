@@ -27,6 +27,10 @@ class KITTI_Util(BaseDataset):
             self._trainingSamples = self._load_data()
 
     @property
+    def scenes_list(self):
+        return self._scene_list
+
+    @property
     def num_scenes(self):
         return len(self._scene_list)
 
