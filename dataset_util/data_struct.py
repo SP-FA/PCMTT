@@ -69,26 +69,6 @@ class KITTI_PointCloud(BasePointCloud):
         points = scan.reshape((-1, 4))[:, :4]
         return points.T
 
-    ################################## affine ###################################
-
-    def translate(self, x):
-        for i in range(3):
-            self.points[i, :] = self.points[i, :] + x[i]
-
-    def rotate(self, rot_mat):
-        self.points[:3, :] = np.dot(rot_mat, self.points[:3, :])
-
-    def transform(self, trans_mat):
-        self.points[:3, :] = trans_mat.dot(
-            np.vstack(
-                (self.points[:3, :], np.ones(self.n()))
-            )
-        )
-
-    def normalize(self, wlh):
-        normalizer = [wlh[1], wlh[0], wlh[2]]
-        self.points = self.points / np.atleast_2d(normalizer).T
-
 
 class Box:
     """存储 3d box，包括 label, score and velocity
