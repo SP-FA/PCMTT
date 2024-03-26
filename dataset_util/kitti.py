@@ -7,18 +7,19 @@ from pyquaternion import Quaternion
 from dataset_util.base_class import BaseDataset
 from dataset_util.data_struct import Box, KITTI_PointCloud
 
+
 # p = KITTI_Util("", "traintiny", coordinate_mode="velodyne", preloading=True)
 
 
 class KITTI_Util(BaseDataset):
     def __init__(self, path, split, **kwargs):
         super().__init__(path, split, **kwargs)
-        self._KITTI_root  = path
-        self._KITTI_velo  = os.path.join(path, "velodyne")
+        self._KITTI_root = path
+        self._KITTI_velo = os.path.join(path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
         self._KITTI_label = os.path.join(path, "label_02")
         self._KITTI_calib = os.path.join(path, "calib")
-        self._scene_list  = self._get_scene_list(split)
+        self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajecktory()
@@ -149,8 +150,6 @@ class KITTI_Util(BaseDataset):
             # if self.preload_offset > 0:
             #     pc = points_utils.crop_pc_axis_aligned(pc, bb, offset=self.preload_offset)
         except:
-            # in case the Point cloud is missing
-            # (0001/[000177-000180].bin)
             print(f"The point cloud at scene {sceneID} frame {frameID} is missing.")
             pc = KITTI_PointCloud(np.array([[0, 0, 0]]).T)
         return {"pc": pc, "3d_bbox": bb, "meta": target}

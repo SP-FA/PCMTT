@@ -1,5 +1,10 @@
+import copy
+
 import numpy as np
 import torch
+from pyquaternion import Quaternion
+
+from dataset_util.data_struct import Box
 
 
 class BaseDataset:
@@ -63,6 +68,49 @@ class BasePointCloud:
 	# 	not_close = np.logical_not(np.logical_and(x, y))
 	# 	self.points = self.points[:, not_close]
 
+	def points_in_box(self, box: Box, returnMask=False):
+		"""给定一个 Bounding box，返回在这个 box 内的点
+		Returns:
+			WaterScene_PointCloud / KITTI_PointCloud: 在 box 内的点云，未进行 normalize
+			Optional[Tensor[n]]: 返回一个 bool 向量，在 box 内的 point id 为 true
+		"""
+		newPoints = copy.deepcopy(self)
+		newBox    = copy.deepcopy(box)
+
+		rotMat = box.rotation_matrix
+		trans  = box.center
+
+		newBox.translate(-trans)
+		newPoints.translate(-trans)
+		newBox.rotate(Quaternion(matrix=(np.transpose(rotMat))))
+		newPoints.rotate(np.transpose(rotMat))
+
+		# maxi = np.max(newBox.corners(), 1)
+		# mini = np.min(newBox.corners(), 1)
+		maxi =  newBox.wlh / 2
+		mini = -newBox.wlh / 2
+
+		x1 = newPoints.points[0, :] < maxi[0]
+		x2 = newPoints.points[0, :] > mini[0]
+		y1 = newPoints.points[1, :] < maxi[1]
+		y2 = newPoints.points[1, :] > mini[1]
+		z1 = newPoints.points[2, :] < maxi[2]
+		z2 = newPoints.points[2, :] > mini[2]
+
+		includeIDs = np.logical_and(x1, x2)
+		includeIDs = np.logical_and(includeIDs, y1)
+		includeIDs = np.logical_and(includeIDs, y2)
+		includeIDs = np.logical_and(includeIDs, z1)
+		includeIDs = np.logical_and(includeIDs, z2)
+
+		dataName = newPoints.__class__
+		pointInBox = dataName(newPoints.points[:, includeIDs])
+		pointInBox.rotate(rotMat)
+		pointInBox.translate(trans)
+		if returnMask:
+			return pointInBox, includeIDs
+		return pointInBox
+
 	def convert2Tensor(self):
 		return torch.from_numpy(self.points)
 
@@ -70,3 +118,25 @@ class BasePointCloud:
 	def fromTensor(cls, tensor):
 		points = tensor.numpy()
 		return cls(points, points.shape[0])
+
+	################################## affine ###################################
+
+	def translate(self, x):
+		for i in range(3):
+			self.points[i, :] = self.points[i, :] + x[i]
+
+	def rotate(self, rot_mat):
+		self.points[:3, :] = np.dot(rot_mat, self.points[:3, :])
+
+	def transform(self, trans_mat):
+		self.points[:3, :] = trans_mat.dot(
+			np.vstack(
+				(self.points[:3, :], np.ones(self.n()))
+			)
+		)
+
+	# def normalize(self, wlh):
+	# 	normalizer = [wlh[1], wlh[0], wlh[2]]
+	# 	self.points[:3, :] = self.points[:3, :] / np.atleast_2d(normalizer).T
+
+
