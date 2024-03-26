@@ -16,6 +16,7 @@
     - BasePointCloud
         - n: 点的维度
         - subsample(self, ratio: float): 下采样
+        - points_in_box(self, box: Box, returnMask=False) -> WaterScene_PointCloud / KITTI_PointCloud, Optional[Tensor]: 返回在 box 内的点和 mask
         - convert2Tensor(self) -> torch.tensor: 类型转换
         - fromTensor(cls, tensor: torch.tensor) -> BasePointCloud: 类型转换
 - kitti: 定义了 KITTI 数据集的 util 方法
