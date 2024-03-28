@@ -45,10 +45,14 @@ class BasePointCloud:
 		self.points = points
 		self._dim = dim
 
+	def __repr__(self):
+		return f"{self.__class__}  shape: [{self.dim}, {self.n}]"
+
 	@property
 	def dim(self):
 		return self._dim
 
+	@property
 	def n(self):
 		return self.points.shape[1]
 
@@ -136,7 +140,7 @@ class BasePointCloud:
 		pointInBox.rotate(rotMat)
 		pointInBox.translate(trans)
 		if returnMask:
-			return pointInBox, pointInBox.box_cloud(box), includeIDs.int()
+			return pointInBox, pointInBox.box_cloud(box), includeIDs
 		return pointInBox, pointInBox.box_cloud(box)
 
 	def convert2Tensor(self):
