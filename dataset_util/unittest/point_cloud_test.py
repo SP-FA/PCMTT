@@ -1,6 +1,6 @@
 import unittest
 from pyquaternion import Quaternion
-from dataset_util.data_struct import KITTI_PointCloud, WaterScene_PointCloud, Box
+from dataset_util.point_struct import KITTI_PointCloud, WaterScene_PointCloud, Box
 
 
 class MyTestCase(unittest.TestCase):

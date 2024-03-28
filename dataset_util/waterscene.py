@@ -8,17 +8,19 @@ import numpy as np
 
 from pyquaternion import Quaternion
 from dataset_util.base_class import BaseDataset
-from dataset_util.data_struct import Box, WaterScene_PointCloud
+from dataset_util.point_struct import WaterScene_PointCloud
+from dataset_util.box_struct import Box
 
 
 class WaterScene_Util(BaseDataset):
     def __init__(self, path, split, **kwargs):
         super().__init__(path, split, **kwargs)
         self._WaterScene_root = path
+        self._coordinate_mode = "velodyne"
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
-        self._traj_list, self._traj_len_list = self._get_trajecktory()
+        self._traj_list, self._traj_len_list = self._get_trajectory()
         if self._preloading:
             self._trainingSamples = self._load_data()
 
@@ -27,14 +29,14 @@ class WaterScene_Util(BaseDataset):
         return len(self._scene_list)
 
     @property
-    def num_trajecktory(self):
+    def num_trajectory(self):
         return len(self._traj_list)
 
     @property
     def num_frames(self):
         return sum(self._traj_len_list)
 
-    def num_frames_trajecktory(self, trajID):
+    def num_frames_trajectory(self, trajID):
         return self._traj_len_list[trajID]
 
     def frames(self, trajID, frameIDs):
@@ -61,7 +63,7 @@ class WaterScene_Util(BaseDataset):
                 pickle.dump(trainingSamples, f)
         return trainingSamples
 
-    def _get_trajecktory(self):
+    def _get_trajectory(self):
         traj_list = []
         traj_len_list = []
         for scene in self._scene_list:
@@ -91,7 +93,7 @@ class WaterScene_Util(BaseDataset):
                             "z": js["psr"]["position"]["z"],
                             "rotation_y": js["psr"]["rotation"]["z"]  # rotation_y 指的是在相机坐标系下的 y 轴
                         }
-                        labelDF = pd.DataFrame(labelDict)
+                        labelDF = pd.DataFrame([labelDict])
                         labelList.append(labelDF)
             df = pd.concat(labelList)
             df.insert(loc=0, column="scene", value=scene)
@@ -99,27 +101,27 @@ class WaterScene_Util(BaseDataset):
                 df_traj = df[df["track_id"] == trackID]
                 df_traj = df_traj.sort_values(by=["frame"])
                 df_traj = df_traj.reset_index(drop=True)
-                trajecktory = [traj for id, traj in df_traj.iterrows()]
-                traj_list.append(trajecktory)
-                traj_len_list.append(len(traj_list))
+                trajectory = [traj for id, traj in df_traj.iterrows()]
+                traj_list.append(trajectory)
+                traj_len_list.append(len(trajectory))
         return traj_list, traj_len_list
 
     def _get_frame_from_target(self, target):
         sceneID = target["scene"]
         frameID = target["frame"]
-        if sceneID in self._calibs.keys():
-            calib = self._calibs[sceneID]
-        else:
-            calibPath = os.path.join(self._WaterScene_root, sceneID, "calib", "calib.txt")
-            calib = self._read_calib(calibPath)
-            self._calibs[sceneID] = calib
+        # if sceneID in self._calibs.keys():
+        #     calib = self._calibs[sceneID]
+        # else:
+        #     calibPath = os.path.join(self._WaterScene_root, sceneID, "calib", "calib.txt")
+        #     calib = self._read_calib(calibPath)
+        #     self._calibs[sceneID] = calib
 
         if self._coordinate_mode == "velodyne":
             center = [target["x"], target["y"] - target["height"] / 2, target["z"]]
             size = [target["width"], target["length"], target["height"]]
             orientation = Quaternion(
                 axis=[0, 1, 0], radians=target["rotation_y"] * Quaternion(
-                    axisi=[1, 0, 0], radians=np.pi / 2
+                    axis=[1, 0, 0], radians=np.pi / 2
                 )
             )
             bb = Box(center, size, orientation)

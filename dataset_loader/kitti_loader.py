@@ -3,9 +3,8 @@ from base_loader import BaseLoader
 # class KITTI_Loader(BaseLoader):
 # def __init__(self, totalArea=True): #-> template, searchArea, box
 import torch
-from dataset_util.data_struct import KITTI_PointCloud
+from dataset_util.point_struct import KITTI_PointCloud
 import numpy as np
-
 
 
 class KITTI_Loader(BaseLoader):

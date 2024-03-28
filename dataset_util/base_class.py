@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from pyquaternion import Quaternion
 
-from dataset_util.data_struct import Box
+from dataset_util.box_struct import Box
 
 
 class BaseDataset:
@@ -19,14 +19,14 @@ class BaseDataset:
 	def num_scenes(self):
 		raise NotImplementedError
 	@property
-	def num_trajecktory(self):
+	def num_trajectory(self):
 		raise NotImplementedError
 
 	@property
 	def num_frames(self):
 		raise NotImplementedError
 
-	def num_frames_trajecktory(self, trajID):
+	def num_frames_trajectory(self, trajID):
 		raise NotImplementedError
 
 	def frames(self, trajID, frameIDs):
@@ -49,15 +49,26 @@ class BasePointCloud:
 	def n(self):
 		return self._dim
 
-	def subsample(self, ratio):
-		"""使用随机采样法下采样。
+	def regularize(self, size):
+		"""使用随机采样法标准化。
 		Args:
-			ratio (float)
+			size (int)
 
 		TODO: 使用其他采样方法
 		"""
-		selectedID = np.random.choice(np.arange(0, self.n()), size=int(self.n() * ratio))
-		self.points = self.points[:, selectedID]
+		selectIDs = None
+		if self.n > 2:
+			if self.n != size:
+				selectIDs = np.random.choice(self.n, size=size, replace=size > self.n)
+			else:
+				selectIDs = np.arange(self.n)
+		if selectIDs is not None:
+			newPoints = self.points[:, selectIDs]
+		else:
+			newPoints = np.zeros((self._dim, size), dtype='float32')
+		dataName = self.__class__
+		points = dataName(newPoints)
+		return points, selectIDs
 
 	# def remove_close(self, radius):
 	# 	"""移除距离原点过近的点
@@ -75,13 +86,14 @@ class BasePointCloud:
 		corner = box.corners()  # [3, 8]
 		center = box.center.reshape(-1, 1)  # [3, 1]
 		boxPoints = np.concatenate([center, corner], axis=1)  # [3, 9]
-		return torch.cdist(self.points.T, boxPoints.T)  # [N, 9]
+		return torch.cdist(self.points.T, boxPoints.T).T  # [9, N]
 
 	def points_in_box(self, box: Box, returnMask=False):
 		"""给定一个 Bounding box，返回在这个 box 内的点
 		Returns:
-			WaterScene_PointCloud / KITTI_PointCloud: 在 box 内的点云，未进行 normalize
-			Optional[Tensor[n]]: 返回一个 bool 向量，在 box 内的 point id 为 true
+			WaterScene_PointCloud | KITTI_PointCloud: 在 box 内的点云，未进行 normalize
+			Tensor[N, 9]: box cloud 向量，对于每个点，返回相对于 box 8 个 corner + 中心点 的距离
+			Optional[Tensor[N]]: 返回一个 bool 向量，在 box 内的 point id 为 true
 		"""
 		newPoints = copy.deepcopy(self)
 		newBox    = copy.deepcopy(box)
@@ -117,7 +129,7 @@ class BasePointCloud:
 		pointInBox.rotate(rotMat)
 		pointInBox.translate(trans)
 		if returnMask:
-			return pointInBox, pointInBox.box_cloud(box), includeIDs
+			return pointInBox, pointInBox.box_cloud(box), includeIDs.int()
 		return pointInBox, pointInBox.box_cloud(box)
 
 	def convert2Tensor(self):
@@ -138,6 +150,7 @@ class BasePointCloud:
 		self.points[:3, :] = np.dot(rot_mat, self.points[:3, :])
 
 	def transform(self, trans_mat):
+		# 点之间距离可能发生变化
 		self.points[:3, :] = trans_mat.dot(
 			np.vstack(
 				(self.points[:3, :], np.ones(self.n()))

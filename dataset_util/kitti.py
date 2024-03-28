@@ -5,12 +5,15 @@ import pickle
 from collections import defaultdict
 from pyquaternion import Quaternion
 from dataset_util.base_class import BaseDataset
-from dataset_util.data_struct import Box, KITTI_PointCloud
-# p = KITTI_Util("", "traintiny", coordinate_mode="velodyne", preloading=True)
+from dataset_util.point_struct import KITTI_PointCloud
+from dataset_util.box_struct import Box
+
+
 class KITTI_Util(BaseDataset):
     def __init__(self, path, split, **kwargs):
         super().__init__(path, split, **kwargs)
         self._KITTI_root = path
+        self._coordinate_mode = "velodyne"
         self._KITTI_velo = os.path.join(path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
         self._KITTI_label = os.path.join(path, "label_02")
@@ -18,7 +21,7 @@ class KITTI_Util(BaseDataset):
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
-        self._traj_list, self._traj_len_list = self._get_trajecktory()
+        self._traj_list, self._traj_len_list = self._get_trajectory()
         if self._preloading:
             self._trainingSamples = self._load_data()
 
@@ -31,14 +34,14 @@ class KITTI_Util(BaseDataset):
         return len(self._scene_list)
 
     @property
-    def num_trajecktory(self):
+    def num_trajectory(self):
         return len(self._traj_list)
 
     @property
     def num_frames(self):
         return sum(self._traj_len_list)
 
-    def num_frames_trajecktory(self, trajID):
+    def num_frames_trajectory(self, trajID):
         return self._traj_len_list[trajID]
 
     def frames(self, trajID, frameIDs):
@@ -66,7 +69,7 @@ class KITTI_Util(BaseDataset):
                 pickle.dump(trainingSamples, f)
         return trainingSamples
 
-    def _get_trajecktory(self):
+    def _get_trajectory(self):
         """获取所有目标的轨迹
 
         Returns:
@@ -89,10 +92,9 @@ class KITTI_Util(BaseDataset):
                 df_traj = df[df["track_id"] == trackID]
                 df_traj = df_traj.sort_values(by=["frame"])
                 df_traj = df_traj.reset_index(drop=True)
-                trajecktory = [traj for id, traj in df_traj.iterrows()]
-                traj_list.append(trajecktory)
-                traj_len_list.append(len(trajecktory))
-            print(traj_len_list)
+                trajectory = [traj for id, traj in df_traj.iterrows()]
+                traj_list.append(trajectory)
+                traj_len_list.append(len(trajectory))
         return traj_list, traj_len_list
 
     def _get_frames_from_target(self, target):
