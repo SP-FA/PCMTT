@@ -13,12 +13,18 @@ class MyTestCase(unittest.TestCase):
         print(kitti.frames(0, [0]))
 
     def test_waterscene(self):
-        water = WaterScene_Util("H:/E_extension/dataset/waterScene", "train tiny", preloading=True)
+        water = WaterScene_Util("H:/E_extension/dataset/waterScene", "train tiny", preloading=False)
         print(water.num_scenes)
         print(water.num_frames)
         print(water.num_trajectory)
         print(water.num_frames_trajectory(0))
-        print(water.frames(1, [0]))
+        # print(water.frames(1, [0]))
+
+        f = water.frames(1, [0])
+        p = f[0]['pc']
+        b = f[0]['3d_bbox']
+        p2, _ = p.points_in_box(b)
+        print(p2.points.shape)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ import numpy as np
 
 from pyquaternion import Quaternion
 from dataset_util.base_class import BaseDataset
-from dataset_util.point_struct import WaterScene_PointCloud
+from dataset_util.point_struct import WaterScene_PointCloud, KITTI_PointCloud
 from dataset_util.box_struct import Box
 
 
@@ -109,21 +109,24 @@ class WaterScene_Util(BaseDataset):
     def _get_frame_from_target(self, target):
         sceneID = target["scene"]
         frameID = target["frame"]
-        # if sceneID in self._calibs.keys():
-        #     calib = self._calibs[sceneID]
-        # else:
-        #     calibPath = os.path.join(self._WaterScene_root, sceneID, "calib", "calib.txt")
-        #     calib = self._read_calib(calibPath)
-        #     self._calibs[sceneID] = calib
+        if sceneID in self._calibs.keys():
+            calib = self._calibs[sceneID]
+        else:
+            calibPath = os.path.join(self._WaterScene_root, sceneID, "calib", "calib.txt")
+            calib = self._read_calib(calibPath)
+            self._calibs[sceneID] = calib
 
+        velo2Cam = np.vstack((calib["t_camera_intrinsic"], np.array([0, 0, 0, 1])))
         if self._coordinate_mode == "velodyne":
-            center = [target["x"], target["y"] - target["height"] / 2, target["z"]]
+            # center = np.array([target["x"], target["y"] - target["height"] / 2, target["z"], 1])
+            center = [target["x"], target["y"], target["z"]]
+            # box_center_velo = np.dot(np.linalg.inv(velo2Cam), center)
+            # box_center_velo = box_center_velo[:3]
             size = [target["width"], target["length"], target["height"]]
-            orientation = Quaternion(
-                axis=[0, 1, 0], radians=target["rotation_y"] * Quaternion(
-                    axis=[1, 0, 0], radians=np.pi / 2
-                )
-            )
+            # orientation = Quaternion(
+            #     axis=[0, 0, -1], radians=target["rotation_y"]) * Quaternion(
+            #         axis=[0, 0, -1], degrees=90)
+            orientation = Quaternion(axis=[0, 0, 1], radians=target["rotation_y"])
             bb = Box(center, size, orientation)
         else:
             ...
@@ -170,5 +173,6 @@ class WaterScene_Util(BaseDataset):
                 try:
                     data[values[0][:-1]] = np.array([float(x) for x in values[1:]]).reshape(3, 4)
                 except ValueError:
-                    pass
+                    data[values[0][:-1]] = np.array([float(x) for x in values[1:]]).reshape(4, 4)
+                    # pass
             return data

@@ -46,8 +46,11 @@ class BasePointCloud:
 		self._dim = dim
 
 	@property
-	def n(self):
+	def dim(self):
 		return self._dim
+
+	def n(self):
+		return self.points.shape[1]
 
 	def regularize(self, size):
 		"""使用随机采样法标准化。
@@ -86,7 +89,11 @@ class BasePointCloud:
 		corner = box.corners()  # [3, 8]
 		center = box.center.reshape(-1, 1)  # [3, 1]
 		boxPoints = np.concatenate([center, corner], axis=1)  # [3, 9]
-		return torch.cdist(self.points.T, boxPoints.T).T  # [9, N]
+		pp = self.points[:3, :].T  # [3, n]
+		pp = torch.tensor(pp)
+		boxPoints = boxPoints.T  # [3, 9]
+		boxPoints = torch.tensor(boxPoints)
+		return torch.cdist(pp, boxPoints)
 
 	def points_in_box(self, box: Box, returnMask=False):
 		"""给定一个 Bounding box，返回在这个 box 内的点
@@ -111,12 +118,12 @@ class BasePointCloud:
 		maxi =  newBox.wlh / 2
 		mini = -newBox.wlh / 2
 
-		x1 = newPoints.points[0, :] < maxi[0]
-		x2 = newPoints.points[0, :] > mini[0]
-		y1 = newPoints.points[1, :] < maxi[1]
-		y2 = newPoints.points[1, :] > mini[1]
-		z1 = newPoints.points[2, :] < maxi[2]
-		z2 = newPoints.points[2, :] > mini[2]
+		x1 = newPoints.points[0, :] <= maxi[0]
+		x2 = newPoints.points[0, :] >= mini[0]
+		y1 = newPoints.points[1, :] <= maxi[1]
+		y2 = newPoints.points[1, :] >= mini[1]
+		z1 = newPoints.points[2, :] <= maxi[2]
+		z2 = newPoints.points[2, :] >= mini[2]
 
 		includeIDs = np.logical_and(x1, x2)
 		includeIDs = np.logical_and(includeIDs, y1)

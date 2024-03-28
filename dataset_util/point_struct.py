@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import pandas as pd
 
@@ -27,6 +29,14 @@ class WaterScene_PointCloud(BasePointCloud):
         df = pd.read_csv(fileName)
         df = df[["x", "y", "z", "range", "azimuth", "elevation", "rcs", "doppler"]]
         points = df.to_numpy()
+
+        x = copy.deepcopy(points[:, 0])
+        y = copy.deepcopy(points[:, 1])
+        z = copy.deepcopy(points[:, 2])
+        points[:, 0] = -z
+        points[:, 1] =  x
+        points[:, 2] = -y
+        points = points.transpose()
         return points.reshape((8, -1))
     # TODO: 归一化
 

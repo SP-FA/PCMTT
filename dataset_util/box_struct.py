@@ -81,7 +81,6 @@ class Box:
         y_corners = w / 2 * np.array([1, -1, -1, 1, 1, -1, -1, 1])
         z_corners = h / 2 * np.array([1, 1, -1, -1, 1, 1, -1, -1])
         corners = np.vstack((x_corners, y_corners, z_corners))
-
         corners = np.dot(self.orient.rotation_matrix, corners)
 
         x, y, z = self.center
