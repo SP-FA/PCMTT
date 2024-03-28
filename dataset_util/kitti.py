@@ -10,15 +10,13 @@ from dataset_util.box_struct import Box
 
 
 class KITTI_Util(BaseDataset):
-    def __init__(self, path, split, **kwargs):
-        super().__init__(path, split, **kwargs)
-        self._KITTI_root = path
-        self._coordinate_mode = "velodyne"
-        self._KITTI_velo = os.path.join(path, "velodyne")
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self._KITTI_velo = os.path.join(cfg.path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
-        self._KITTI_label = os.path.join(path, "label_02")
-        self._KITTI_calib = os.path.join(path, "calib")
-        self._scene_list = self._get_scene_list(split)
+        self._KITTI_label = os.path.join(cfg.path, "label_02")
+        self._KITTI_calib = os.path.join(cfg.path, "calib")
+        self._scene_list = self._get_scene_list(cfg.split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajectory()
@@ -53,8 +51,9 @@ class KITTI_Util(BaseDataset):
         return frames
 
     def _load_data(self):
-        preloadPath = os.path.join(self._KITTI_root,
-                                   f"preload_kitti_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat")
+        preloadPath = os.path.join(
+            self._path, f"preload_kitti_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat"
+        )
         if os.path.isfile(preloadPath):
             with open(preloadPath, 'rb') as f:
                 trainingSamples = pickle.load(f)

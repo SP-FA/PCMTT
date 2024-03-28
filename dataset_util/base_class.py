@@ -8,16 +8,17 @@ from dataset_util.box_struct import Box
 
 
 class BaseDataset:
-	def __init__(self, path, split, **kwargs):
-		self.path = path
-		self._split = split
-		self._coordinate_mode = kwargs.get("coordinate_mode", "velogyne")
-		self._preload_offset = kwargs.get("preload_offset", -1)
-		self._preloading = kwargs.get('preloading', False)
+	def __init__(self, cfg):
+		self._path = cfg.path
+		self._split = cfg.split
+		self._coordinate_mode = cfg.coordinate_mode
+		self._preload_offset = cfg.preload_offset
+		self._preloading = cfg.preloading
 
 	@property
 	def num_scenes(self):
 		raise NotImplementedError
+
 	@property
 	def num_trajectory(self):
 		raise NotImplementedError
