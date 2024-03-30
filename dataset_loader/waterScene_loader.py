@@ -41,6 +41,7 @@ class WaterScene_Loader(BaseLoader):
         template, _ = templatePoints.points_in_box(templateFrame['3d_bbox'], returnMask=False)
         template, _ = template.regularize(self.templateSize)
         boxCloud = template.box_cloud(templateFrame['3d_bbox'])
+        template = template.normalize()
 
         searchAreaPoints = searchFrame['pc']
         trueBox = searchFrame['3d_bbox']

@@ -40,7 +40,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_waterscene(self):
         cfg = parse_config()
-        cfg.preloading = True
+        cfg.preloading = False
         water = WaterScene_Util(cfg)
         print(water.num_scenes)
         print(water.num_frames)

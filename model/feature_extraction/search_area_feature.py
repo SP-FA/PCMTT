@@ -17,13 +17,13 @@ class SearchAreaFeatExtraction(nn.Module):
     def forward(self, x):
         """Input a search area
         Args:
-            x Tensor[B, P2， D1]
+            x Tensor[B, D1, P2]
 
         Returns:
             Tensor[B, D2=256, P2]
         """
-        M = x.shape[1]
-        xyz, feat, _ = self.pn2(x, [M // 2, M // 4, M // 8])  # feature: [B, 256, P2]
+        N = x.shape[-1]
+        xyz, feat, _ = self.pn2(x, [N // 2, N // 4, N // 8])  # feature: [B, 256, P2]
         print(f"{xyz.shape = }  {feat.shape = }")
         return self.att(feat)  # [B, 256, P2]
 

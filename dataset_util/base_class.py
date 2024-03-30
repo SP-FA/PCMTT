@@ -1,7 +1,7 @@
 import copy
-
 import numpy as np
 import torch
+import torch.nn.functional as F
 from pyquaternion import Quaternion
 
 from dataset_util.box_struct import Box
@@ -144,6 +144,9 @@ class BasePointCloud:
 			return pointInBox, pointInBox.box_cloud(box), includeIDs
 		return pointInBox, pointInBox.box_cloud(box)
 
+	def normalize(self):
+		return F.normalize(self.points, dim=-1)
+
 	def convert2Tensor(self):
 		return torch.from_numpy(self.points)
 
@@ -151,8 +154,6 @@ class BasePointCloud:
 	def fromTensor(cls, tensor):
 		points = tensor.numpy()
 		return cls(points, points.shape[0])
-
-################################## affine ###################################
 
 	def translate(self, x):
 		for i in range(3):
@@ -168,9 +169,3 @@ class BasePointCloud:
 				(self.points[:3, :], np.ones(self.n()))
 			)
 		)
-
-	# def normalize(self, wlh):
-	# 	normalizer = [wlh[1], wlh[0], wlh[2]]
-	# 	self.points[:3, :] = self.points[:3, :] / np.atleast_2d(normalizer).T
-
-
