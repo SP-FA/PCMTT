@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 from pyquaternion import Quaternion
-from dataset_util.point_struct import Box
+from dataset_util.box_struct import Box
+
 
 class MyTestCase(unittest.TestCase):
     def test_Box(self):
