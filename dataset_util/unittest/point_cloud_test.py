@@ -1,7 +1,7 @@
 import unittest
 from pyquaternion import Quaternion
-from dataset_util.point_struct import KITTI_PointCloud, WaterScene_PointCloud, Box
-
+from dataset_util.point_struct import KITTI_PointCloud, WaterScene_PointCloud
+from dataset_util.box_struct import Box
 
 class MyTestCase(unittest.TestCase):
     def test_KITTI_PointCloud(self):
@@ -16,7 +16,6 @@ class MyTestCase(unittest.TestCase):
         print(p.points)
         p.translate([200, 200, 200])
         print(p.points)
-
         q = Quaternion()
         p.rotate(q.rotation_matrix)
         print(p.points)

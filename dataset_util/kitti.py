@@ -16,7 +16,7 @@ class KITTI_Util(BaseDataset):
         self._coordinate_mode = "velodyne"
         self._KITTI_velo = os.path.join(path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
-        self._KITTI_label = os.path.join(path, "label_02")
+        self._KITTI_label = os.path.join(path, "label_2")
         self._KITTI_calib = os.path.join(path, "calib")
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
@@ -51,6 +51,7 @@ class KITTI_Util(BaseDataset):
             traj = self._traj_list[trajID]
             frames = [self._get_frames_from_target(traj[frameID]) for frameID in frameIDs]
         return frames
+
 
     def _load_data(self):
         preloadPath = os.path.join(self._KITTI_root,
@@ -124,7 +125,7 @@ class KITTI_Util(BaseDataset):
             self._calibs[sceneID] = calib
 
         velo_to_cam = np.vstack((calib["Tr_velo_cam"], np.array([0, 0, 0, 1])))
-        if self._coordinate_mode == "velodyne":
+        if self._coordinate_mode == "velodrome":
             box_center_cam = np.array([target["x"], target["y"] - target["height"] / 2, target["z"], 1])
             box_center_velo = np.dot(np.linalg.inv(velo_to_cam), box_center_cam)
             box_center_velo = box_center_velo[:3]

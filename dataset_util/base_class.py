@@ -97,7 +97,9 @@ class BasePointCloud:
 		pp = torch.tensor(pp)
 		boxPoints = boxPoints.T  # [3, 9]
 		boxPoints = torch.tensor(boxPoints)
-		return torch.cdist(pp, boxPoints)
+		pp1=pp.to(torch.float32)
+		boxPoints1=boxPoints.to(torch.float32)
+		return torch.cdist(pp1, boxPoints1)
 
 	def points_in_box(self, box: Box, returnMask=False):
 		"""给定一个 Bounding box，返回在这个 box 内的点
