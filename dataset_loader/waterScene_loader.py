@@ -13,7 +13,7 @@ class WaterScene_Loader(BaseLoader):
     """暂时只适配 WaterScene 数据集、全部点云作为 SearchArea， template box 没有偏移，适配 PGNN 算法，template 和 searchArea 随机采样。
     """
     def __init__(self, data, cfg):
-        super(WaterScene_Loader, self).__init__(data)
+        super(WaterScene_Loader, self).__init__(data, cfg)
         self.fullArea = cfg.full_area
         self.templateSize = cfg.template_size
         self.searchSize = cfg.search_size
@@ -41,7 +41,7 @@ class WaterScene_Loader(BaseLoader):
         template, _ = templatePoints.points_in_box(templateFrame['3d_bbox'], returnMask=False)
         template, _ = template.regularize(self.templateSize)
         boxCloud = template.box_cloud(templateFrame['3d_bbox'])
-        template = template.normalize()
+        normTemplate = template.normalize()
 
         searchAreaPoints = searchFrame['pc']
         trueBox = searchFrame['3d_bbox']
@@ -55,10 +55,11 @@ class WaterScene_Loader(BaseLoader):
             searchArea, selectIDs = searchArea.regularize(self.searchSize)
             segLabel = segLabel[selectIDs]
         return {
-            "template": template,
-            "boxCloud": boxCloud,
-            "searchArea": searchArea,
-            "segLabel": segLabel,
-            "trueBox": trueBox
+            "template": normTemplate.to(self.cfg.device),
+            "boxCloud": boxCloud.clone().detach().to(self.cfg.device),
+            "searchArea": searchArea.convert2Tensor().to(self.cfg.device),
+            "segLabel": torch.tensor(segLabel).to(self.cfg.device),
+            "trueBox": torch.tensor([trueBox.center[0], trueBox.center[1], trueBox.center[2],
+                        trueBox.wlh[0], trueBox.wlh[1], trueBox.wlh[2], trueBox.theta]).view(-1).to(self.cfg.device)
         }
 

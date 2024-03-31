@@ -1,13 +1,10 @@
-# global config
-batch_size: 64
-epoch: 100
-check_val_every_n_epoch: 10
-checkpoint: ./checkpoint
-log_dir: ./log
-
 # dataset
 path: H:/E_extension/dataset/waterScene
-split: train tiny
+dataset: waterscene
+point_dim: 8
+train_split: train tiny
+valid_split: valid tiny
+test_split: test tiny
 coordinate_mode: velodyne
 preload_offset: -1
 
@@ -15,3 +12,23 @@ preload_offset: -1
 full_area: True
 template_size: 32
 search_size: 256
+workers: 1
+
+# train
+checkpoint: ./checkpoint
+batch_size: 64
+epoch: 10000
+pretrain:
+optimizer: adam
+lr: 0.01
+wd: 0.0001
+check_val_every_n_epoch: 10
+save_last: True
+use_fps: True
+normalize_xyz: True
+
+# loss
+object_weight: 1.5
+box_weight: 0.2
+vote_weight: 1.0
+seg_weight: 0.2

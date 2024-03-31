@@ -10,15 +10,16 @@ class FeatureFusion(nn.Module):
         super(FeatureFusion, self).__init__()
         self.att = CrossAttention(in_channels, in_channels)
         self.kal = KalmanFilter()
-        self.rpn = RPN(in_channels, cfg.normalize_xyz)
+        self.rpn = RPN(in_channels, normalize_xyz=cfg.normalize_xyz)
         self.prevB = None
         self.prevV = None
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, xyz):
         """
         Args:
             x1 Tensor[B, D2, P1]: Template
             x2 Tensor[B, D2, P2]: SearchArea
+            xyz Tensor[B, P2, 3]
 
         Returns:
             {
@@ -30,7 +31,6 @@ class FeatureFusion(nn.Module):
         }
         """
         output = self.att(x1, x2)  # [B, D2, P2]
-        xyz = x2[:, :3, :]  # [B, 3, P2]
         # if self.prevB is not None:
             # ...
             # 用 kalman 预先把 xyz 剪裁一下，但是不知道会不会导致模型难以收敛，暂时先不启用
@@ -38,7 +38,12 @@ class FeatureFusion(nn.Module):
 
         # [B, P2, 4+1], [B, P2]
         predBox, predSeg, vote_xyz, center_xyz = self.rpn(xyz, output)
-        print(f"{predBox.shape = }  {predSeg.shape = }  {vote_xyz.shape = }  {center_xyz.shape = }")
+        # predBox = [64, 16, 5] predSeg = [64, 32] vote_xyz = [64, 32, 3] center_xyz = [64, 16, 3]
+
+        predBox += 1e-6
+        finalBoxID = torch.argmax(predBox[..., -1], dim=1).view(-1, 1)
+        finalBox = torch.gather(predBox, 1, finalBoxID.unsqueeze(-1).expand(-1, -1, predBox.size(-1)))
+        finalBox = finalBox.squeeze(1)
 
         # bestBoxID = torch.argmax(predBox[:, 4])  # [B, 1]
         # bestBox = predBox[bestBoxID]
@@ -52,5 +57,5 @@ class FeatureFusion(nn.Module):
             "predSeg": predSeg,
             "vote_xyz": vote_xyz,
             "center_xyz": center_xyz,
-            # "finalBox":
+            "finalBox": finalBox
         }

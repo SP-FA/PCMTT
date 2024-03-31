@@ -18,15 +18,14 @@ class TemplateFeatExtraction(nn.Module):
         """Input templates and boxClouds
         Args:
             template Tensor[B, D1, P1]
-            boxCloud Tensor[B, D3, P1]
+            boxCloud Tensor[B, P1, D3]
 
         Returns:
             Tensor[B, D2, P1]
         """
         template = self.dgn(template)  # [B, P1, D2]
-        boxCloud = boxCloud.permute(0, 2, 1)
         x = torch.cat([template, boxCloud], dim=-1)  # [B, P1, D2 + D3]
-        x = x.permute(0, 2, 1)  # [B, D2 + D3, P1]
+        x = x.permute(0, 2, 1)
         x = self.mlp(x)
         return self.att(x)
 

@@ -4,8 +4,10 @@ from dataset_util.base_class import BaseDataset
 
 
 class BaseLoader(Dataset):
-    def __init__(self, data: BaseDataset):
+    def __init__(self, data: BaseDataset, cfg):
         self.data = data
+        self.cfg = cfg
+
     def __len__(self):
         raise NotImplementedError
 

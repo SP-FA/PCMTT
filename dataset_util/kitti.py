@@ -130,14 +130,14 @@ class KITTI_Util(BaseDataset):
             size = [target["width"], target["length"], target["height"]]
             orientation = Quaternion(
                 axis=[0, 0, -1], radians=target["rotation_y"]) * Quaternion(axis=[0, 0, -1], degrees=90)
-            bb = Box(box_center_velo, size, orientation)
+            bb = Box(box_center_velo, size, target["rotation_y"], orientation)
         else:
             center = [target["x"], target["y"] - target["height"] / 2, target["z"]]
             size = [target["width"], target["length"], target["height"]]
             orientation = Quaternion(
                 axis=[0, 1, 0], radians=target["rotation_y"]) * Quaternion(
                 axis=[1, 0, 0], radians=np.pi / 2)
-            bb = Box(center, size, orientation)
+            bb = Box(center, size, target["rotation_y"], orientation)
 
         try:
             if sceneID in self._velos.keys() and frameID in self._velos[sceneID].keys():

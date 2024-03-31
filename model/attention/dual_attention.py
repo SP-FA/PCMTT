@@ -40,7 +40,7 @@ class DualAttention(nn.Module):
 
         feat_sum = sa_conv + sc_conv
         sasc_output = self.conv8(feat_sum)
-        return sasc_output, sa_output, sc_output
+        return sasc_output
 
 
 class PositionAttention(nn.Module):

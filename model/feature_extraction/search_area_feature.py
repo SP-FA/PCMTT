@@ -11,7 +11,7 @@ class SearchAreaFeatExtraction(nn.Module):
             input_channels = 5
         else:
             input_channels = 0
-        self.pn2 = Pointnet2(cfg.use_fps, cfg.normalize_xyz, cfg.return_intermediate, input_channels)  # [B, 256, N]
+        self.pn2 = Pointnet2(cfg.use_fps, cfg.normalize_xyz, input_channels)  # [B, 256, P3]
         self.att = DualAttention(256, 256)
 
     def forward(self, x):
@@ -23,8 +23,8 @@ class SearchAreaFeatExtraction(nn.Module):
             Tensor[B, D2=256, P2]
         """
         N = x.shape[-1]
-        xyz, feat, _ = self.pn2(x, [N // 2, N // 4, N // 8])  # feature: [B, 256, P2]
-        print(f"{xyz.shape = }  {feat.shape = }")
-        return self.att(feat)  # [B, 256, P2]
+        x = x.permute(0, 2, 1)
+        xyz, feat, sample_idxs = self.pn2(x, [N // 2, N // 4, N // 8])  # feature: [B, 256, P3]
+        return xyz, self.att(feat), sample_idxs  # [B, 256, P3]
 
 

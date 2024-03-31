@@ -20,7 +20,7 @@ class KalmanFilter(nn.Module):
         self.B = nn.Parameter(torch.eye(3) * 0.01)
         self.H = nn.Parameter(torch.eye(3), requires_grad=False)
         self.Q = nn.Parameter(torch.tensor([0.1]))
-        self.R = nn.Parameter(torch.tensor([1]))
+        self.R = nn.Parameter(torch.tensor([1], dtype=torch.float))
         self.x = None
         self.P = nn.Parameter(torch.eye(3), requires_grad=False)
 

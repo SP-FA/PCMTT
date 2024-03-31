@@ -9,7 +9,7 @@ from model.pointnet2.utils.pointnet2_modules import PointnetSAModule
 
 
 class RPN(nn.Module):
-    def __init__(self, feature_channel, vote_channel=256, num_proposal=64, normalize_xyz=False):
+    def __init__(self, feature_channel, vote_channel=256, num_proposal=16, normalize_xyz=False):
         super(RPN, self).__init__()
         self.num_proposal = num_proposal
         self.FC_layer_cla = (

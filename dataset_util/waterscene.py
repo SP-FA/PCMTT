@@ -13,10 +13,10 @@ from dataset_util.box_struct import Box
 
 
 class WaterScene_Util(BaseDataset):
-    def __init__(self, cfg):
-        super().__init__(cfg)
+    def __init__(self, cfg, split):
+        super().__init__(cfg, split)
         # self._WaterScene_root = path
-        self._scene_list = self._get_scene_list(cfg.split)
+        self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajectory()
@@ -128,7 +128,7 @@ class WaterScene_Util(BaseDataset):
             #     axis=[0, 0, -1], radians=target["rotation_y"]) * Quaternion(
             #         axis=[0, 0, -1], degrees=90)
             orientation = Quaternion(axis=[0, 0, 1], radians=target["rotation_y"])
-            bb = Box(center, size, orientation)
+            bb = Box(center, size, target["rotation_y"], orientation)
         else:
             ...
 
@@ -152,7 +152,7 @@ class WaterScene_Util(BaseDataset):
     def _get_scene_list(split):
         if "tiny" in split.lower():
             # splitDict = {"train": [2], "valid": [8], "test": [17]}
-            splitDict = {"train": [2, 6, 7, 8, 17], "valid": [8], "test": [17]}
+            splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
         else:
             splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
         
