@@ -154,7 +154,7 @@ class WaterScene_Util(BaseDataset):
             # splitDict = {"train": [2], "valid": [8], "test": [17]}
             splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
         else:
-            splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
+            splitDict = {"train": [2, 6, 7, 8, 17], "valid": [8], "test": [17]}
         
         if "train" in split.lower():
             sceneNames = splitDict["train"]

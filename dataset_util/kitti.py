@@ -10,13 +10,13 @@ from dataset_util.box_struct import Box
 
 
 class KITTI_Util(BaseDataset):
-    def __init__(self, cfg):
-        super().__init__(cfg)
+    def __init__(self, cfg, split):
+        super().__init__(cfg, split)
         self._KITTI_velo = os.path.join(cfg.path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
         self._KITTI_label = os.path.join(cfg.path, "label_02")
         self._KITTI_calib = os.path.join(cfg.path, "calib")
-        self._scene_list = self._get_scene_list(cfg.split)
+        self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajectory()

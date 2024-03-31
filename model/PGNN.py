@@ -11,7 +11,12 @@ class PGNN(nn.Module):
     def __init__(self, cfg):
         super(PGNN, self).__init__()
         self.device = cfg.device
-        self.tempFeat = TemplateFeatExtraction(cfg.point_dim).to(cfg.device)
+        if cfg.dataset.lower() == "waterscene":
+            dim = 8
+        elif cfg.dataset.lower() == "kitti":
+            dim = 3
+
+        self.tempFeat = TemplateFeatExtraction(dim).to(cfg.device)
         self.areaFeat = SearchAreaFeatExtraction(cfg).to(cfg.device)
         self.joinFeat = FeatureFusion(256, cfg).to(cfg.device)
 

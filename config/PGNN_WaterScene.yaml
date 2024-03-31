@@ -1,0 +1,36 @@
+# dataset
+path: H:/E_extension/dataset/waterScene
+dataset: waterscene
+point_dim: 8
+train_split: train
+valid_split: valid
+test_split: test
+coordinate_mode: velodyne
+preload_offset: -1
+
+# dataloader
+full_area: True
+search_area_offset:
+template_offset:
+template_size: 32
+search_size: 256
+workers: 1
+
+# train
+checkpoint: ./checkpoint
+batch_size: 64
+epoch: 1000
+pretrain:
+optimizer: adam
+lr: 0.01
+wd: 0.0001
+check_val_every_n_epoch: 10
+save_last: True
+use_fps: True
+normalize_xyz: True
+
+# loss
+object_weight: 1.5
+box_weight: 0.2
+vote_weight: 1.0
+seg_weight: 0.2

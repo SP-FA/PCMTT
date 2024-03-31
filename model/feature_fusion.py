@@ -18,8 +18,8 @@ class FeatureFusion(nn.Module):
         """
         Args:
             x1 Tensor[B, D2, P1]: Template
-            x2 Tensor[B, D2, P2]: SearchArea
-            xyz Tensor[B, P2, 3]
+            x2 Tensor[B, D2, P3]: SearchArea
+            xyz Tensor[B, P3, 3]
 
         Returns:
             {
@@ -30,7 +30,7 @@ class FeatureFusion(nn.Module):
             "finalBox": [B, 4]
         }
         """
-        output = self.att(x1, x2)  # [B, D2, P2]
+        output = self.att(x1, x2)  # [B, D2, P3]
         # if self.prevB is not None:
             # ...
             # 用 kalman 预先把 xyz 剪裁一下，但是不知道会不会导致模型难以收敛，暂时先不启用

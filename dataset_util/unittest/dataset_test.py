@@ -17,7 +17,7 @@ def load_yaml(file_name):
 
 def parse_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default="../../config/PGNN.yaml", help='the config_file')
+    parser.add_argument('--cfg', type=str, default="../../config/PGNN_WaterScene.yaml", help='the config_file')
     parser.add_argument('--test', action='store_true', default=False, help='test mode')
     parser.add_argument('--preloading', action='store_true', default=False, help='preload dataset into memory')
 

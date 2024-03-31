@@ -2,13 +2,6 @@ import torch
 from dataset_loader.base_loader import BaseLoader
 
 
-def random_choice(num_samples, size):
-    return torch.multinomial(
-        torch.ones(size, dtype=torch.float32),
-        num_samples=num_samples
-    )
-
-
 class WaterScene_Loader(BaseLoader):
     """暂时只适配 WaterScene 数据集、全部点云作为 SearchArea， template box 没有偏移，适配 PGNN 算法，template 和 searchArea 随机采样。
     """

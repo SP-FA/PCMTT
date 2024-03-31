@@ -25,10 +25,10 @@ class CrossAttention(nn.Module):
         """
         Args:
             x1 Tensor[B, D2, P1]: Template
-            x2 Tensor[B, D2, P2]: SearchArea
+            x2 Tensor[B, D2, P3]: SearchArea
 
         Returns:
-            Tensor[B, D2, P2]
+            Tensor[B, D2, P3]
         """
         feat1 = self.conv1(x1)
         feat2 = self.conv2(x2)
