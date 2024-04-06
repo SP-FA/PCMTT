@@ -16,7 +16,7 @@ class KITTI_Util(BaseDataset):
         self._coordinate_mode = "velodyne"
         self._KITTI_velo = os.path.join(path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
-        self._KITTI_label = os.path.join(path, "label_2")
+        self._KITTI_label = os.path.join(path, "label_02")
         self._KITTI_calib = os.path.join(path, "calib")
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
@@ -39,7 +39,9 @@ class KITTI_Util(BaseDataset):
 
     @property
     def num_frames(self):
-        return sum(self._traj_len_list)
+        list_len = self._traj_len_list
+        sum_list = sum(list_len)
+        return sum_list
 
     def num_frames_trajectory(self, trajID):
         return self._traj_len_list[trajID]
@@ -97,6 +99,7 @@ class KITTI_Util(BaseDataset):
                 traj_list.append(trajectory)
                 traj_len_list.append(len(trajectory))
         return traj_list, traj_len_list
+
 
     def _get_frames_from_target(self, target):
         """从某个目标的某一帧用获取点云和 box 信息 (frame)
@@ -160,7 +163,7 @@ class KITTI_Util(BaseDataset):
     @staticmethod
     def _get_scene_list(split):
         if "tiny" in split.lower():
-            splitDict = {"train": [0], "valid": [18], "test": [19]}
+            splitDict = {"train": list(range(0,21)), "valid": [18], "test": [19]}
         else:
             splitDict = {
                 "train": list(range(0, 17)),

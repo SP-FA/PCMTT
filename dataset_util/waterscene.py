@@ -24,6 +24,7 @@ class WaterScene_Util(BaseDataset):
         if self._preloading:
             self._trainingSamples = self._load_data()
 
+
     @property
     def num_scenes(self):
         return len(self._scene_list)
