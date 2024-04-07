@@ -10,15 +10,13 @@ from dataset_util.box_struct import Box
 
 
 class KITTI_Util(BaseDataset):
-    def __init__(self, path, split, **kwargs):
-        super().__init__(path, split, **kwargs)
-        self._KITTI_root = path
-        self._coordinate_mode = "velodyne"
-        self._KITTI_velo = os.path.join(path, "velodyne")
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self._KITTI_velo = os.path.join(cfg.path, "velodyne")
         # self._KITTI_img = os.path.join(path, "image_02")
-        self._KITTI_label = os.path.join(path, "label_02")
-        self._KITTI_calib = os.path.join(path, "calib")
-        self._scene_list = self._get_scene_list(split)
+        self._KITTI_label = os.path.join(cfg.path, "label_02")
+        self._KITTI_calib = os.path.join(cfg.path, "calib")
+        self._scene_list = self._get_scene_list(cfg.split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajectory()
@@ -39,9 +37,7 @@ class KITTI_Util(BaseDataset):
 
     @property
     def num_frames(self):
-        list_len = self._traj_len_list
-        sum_list = sum(list_len)
-        return sum_list
+        return sum(self._traj_len_list)
 
     def num_frames_trajectory(self, trajID):
         return self._traj_len_list[trajID]
@@ -54,10 +50,10 @@ class KITTI_Util(BaseDataset):
             frames = [self._get_frames_from_target(traj[frameID]) for frameID in frameIDs]
         return frames
 
-
     def _load_data(self):
-        preloadPath = os.path.join(self._KITTI_root,
-                                   f"preload_kitti_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat")
+        preloadPath = os.path.join(
+            self._path, f"preload_kitti_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat"
+        )
         if os.path.isfile(preloadPath):
             with open(preloadPath, 'rb') as f:
                 trainingSamples = pickle.load(f)
@@ -100,7 +96,6 @@ class KITTI_Util(BaseDataset):
                 traj_len_list.append(len(trajectory))
         return traj_list, traj_len_list
 
-
     def _get_frames_from_target(self, target):
         """从某个目标的某一帧用获取点云和 box 信息 (frame)
            暂时不处理图像。
@@ -128,7 +123,7 @@ class KITTI_Util(BaseDataset):
             self._calibs[sceneID] = calib
 
         velo_to_cam = np.vstack((calib["Tr_velo_cam"], np.array([0, 0, 0, 1])))
-        if self._coordinate_mode == "velodrome":
+        if self._coordinate_mode == "velodyne":
             box_center_cam = np.array([target["x"], target["y"] - target["height"] / 2, target["z"], 1])
             box_center_velo = np.dot(np.linalg.inv(velo_to_cam), box_center_cam)
             box_center_velo = box_center_velo[:3]
@@ -163,7 +158,7 @@ class KITTI_Util(BaseDataset):
     @staticmethod
     def _get_scene_list(split):
         if "tiny" in split.lower():
-            splitDict = {"train": list(range(0,21)), "valid": [18], "test": [19]}
+            splitDict = {"train":list(range(0, 21)), "valid": [18], "test": [19]}
         else:
             splitDict = {
                 "train": list(range(0, 17)),

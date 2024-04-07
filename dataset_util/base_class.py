@@ -1,23 +1,24 @@
 import copy
-
 import numpy as np
 import torch
+import torch.nn.functional as F
 from pyquaternion import Quaternion
 
 from dataset_util.box_struct import Box
 
 
 class BaseDataset:
-	def __init__(self, path, split, **kwargs):
-		self.path = path
-		self._split = split
-		self._coordinate_mode = kwargs.get("coordinate_mode", "velogyne")
-		self._preload_offset = kwargs.get("preload_offset", -1)
-		self._preloading = kwargs.get('preloading', False)
+	def __init__(self, cfg):
+		self._path = cfg.path
+		self._split = cfg.split
+		self._coordinate_mode = cfg.coordinate_mode
+		self._preload_offset = cfg.preload_offset
+		self._preloading = cfg.preloading
 
 	@property
 	def num_scenes(self):
 		raise NotImplementedError
+
 	@property
 	def num_trajectory(self):
 		raise NotImplementedError
@@ -97,9 +98,7 @@ class BasePointCloud:
 		pp = torch.tensor(pp)
 		boxPoints = boxPoints.T  # [3, 9]
 		boxPoints = torch.tensor(boxPoints)
-		pp1=pp.to(torch.float32)
-		boxPoints1=boxPoints.to(torch.float32)
-		return torch.cdist(pp1, boxPoints1)
+		return torch.cdist(pp, boxPoints)
 
 	def points_in_box(self, box: Box, returnMask=False):
 		"""给定一个 Bounding box，返回在这个 box 内的点
@@ -145,6 +144,9 @@ class BasePointCloud:
 			return pointInBox, pointInBox.box_cloud(box), includeIDs
 		return pointInBox, pointInBox.box_cloud(box)
 
+	def normalize(self):
+		return F.normalize(self.points, dim=-1)
+
 	def convert2Tensor(self):
 		return torch.from_numpy(self.points)
 
@@ -152,8 +154,6 @@ class BasePointCloud:
 	def fromTensor(cls, tensor):
 		points = tensor.numpy()
 		return cls(points, points.shape[0])
-
-################################## affine ###################################
 
 	def translate(self, x):
 		for i in range(3):
@@ -169,9 +169,3 @@ class BasePointCloud:
 				(self.points[:3, :], np.ones(self.n()))
 			)
 		)
-
-	# def normalize(self, wlh):
-	# 	normalizer = [wlh[1], wlh[0], wlh[2]]
-	# 	self.points[:3, :] = self.points[:3, :] / np.atleast_2d(normalizer).T
-
-

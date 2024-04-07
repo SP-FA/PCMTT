@@ -13,17 +13,15 @@ from dataset_util.box_struct import Box
 
 
 class WaterScene_Util(BaseDataset):
-    def __init__(self, path, split, **kwargs):
-        super().__init__(path, split, **kwargs)
-        self._WaterScene_root = path
-        self._coordinate_mode = "velodyne"
-        self._scene_list = self._get_scene_list(split)
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        # self._WaterScene_root = path
+        self._scene_list = self._get_scene_list(cfg.split)
         self._velos = defaultdict(dict)
         self._calibs = {}
         self._traj_list, self._traj_len_list = self._get_trajectory()
         if self._preloading:
             self._trainingSamples = self._load_data()
-
 
     @property
     def num_scenes(self):
@@ -49,7 +47,9 @@ class WaterScene_Util(BaseDataset):
         return frames
 
     def _load_data(self):
-        preloadPath = os.path.join(self._WaterScene_root, f"preload_waterscene_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat")
+        preloadPath = os.path.join(
+            self._path, f"preload_waterscene_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat"
+        )
         if os.path.isfile(preloadPath):
             with open(preloadPath, 'rb') as f:
                 trainingSamples = pickle.load(f)
@@ -68,7 +68,7 @@ class WaterScene_Util(BaseDataset):
         traj_list = []
         traj_len_list = []
         for scene in self._scene_list:
-            labelPath = os.path.join(self._WaterScene_root, scene, "label")
+            labelPath = os.path.join(self._path, scene, "label")
             labelList = []
             for labelFile in os.listdir(labelPath):
                 with open(os.path.join(labelPath, labelFile), 'r') as f:
@@ -113,7 +113,7 @@ class WaterScene_Util(BaseDataset):
         if sceneID in self._calibs.keys():
             calib = self._calibs[sceneID]
         else:
-            calibPath = os.path.join(self._WaterScene_root, sceneID, "calib", "calib.txt")
+            calibPath = os.path.join(self._path, sceneID, "calib", "calib.txt")
             calib = self._read_calib(calibPath)
             self._calibs[sceneID] = calib
 
@@ -136,7 +136,7 @@ class WaterScene_Util(BaseDataset):
             if sceneID in self._velos.keys() and frameID in self._velos[sceneID].keys():
                 pc = self._velos[sceneID][frameID]
             else:
-                velodynePath = os.path.join(self._WaterScene_root, sceneID, "radar", f"{frameID}.csv")
+                velodynePath = os.path.join(self._path, sceneID, "radar", f"{frameID}.csv")
                 pc = WaterScene_PointCloud.from_file(velodynePath)
                 # if self.coordinate_mode == "camera":
                 #     pc.transform(velo_2_cam)
@@ -151,10 +151,11 @@ class WaterScene_Util(BaseDataset):
     @staticmethod
     def _get_scene_list(split):
         if "tiny" in split.lower():
-            splitDict = {"train": [2], "valid": [8], "test": [17]}
+            # splitDict = {"train": [2], "valid": [8], "test": [17]}
+            splitDict = {"train": [2, 6, 7, 8, 17], "valid": [8], "test": [17]}
         else:
             splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
-        
+
         if "train" in split.lower():
             sceneNames = splitDict["train"]
         elif "valid" in split.lower():

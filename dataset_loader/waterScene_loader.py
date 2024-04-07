@@ -12,14 +12,11 @@ def random_choice(num_samples, size):
 class WaterScene_Loader(BaseLoader):
     """暂时只适配 WaterScene 数据集、全部点云作为 SearchArea， template box 没有偏移，适配 PGNN 算法，template 和 searchArea 随机采样。
     """
-    def __init__(self, data): #, cfg):
+    def __init__(self, data, cfg):
         super(WaterScene_Loader, self).__init__(data)
-        # self.fullArea = cfg.full_area
-        # self.templateSize = cfg.template_size
-        # self.searchSize = cfg.search_size
-        self.fullArea = True
-        self.templateSize = 32
-        self.searchSize = 256
+        self.fullArea = cfg.full_area
+        self.templateSize = cfg.template_size
+        self.searchSize = cfg.search_size
 
     def __len__(self):
         return self.data.num_frames
@@ -44,6 +41,7 @@ class WaterScene_Loader(BaseLoader):
         template, _ = templatePoints.points_in_box(templateFrame['3d_bbox'], returnMask=False)
         template, _ = template.regularize(self.templateSize)
         boxCloud = template.box_cloud(templateFrame['3d_bbox'])
+        template = template.normalize()
 
         searchAreaPoints = searchFrame['pc']
         trueBox = searchFrame['3d_bbox']

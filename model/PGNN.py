@@ -17,15 +17,15 @@ class PGNN(nn.Module):
 
     def forward(self, data):
         temp = data["template"]
+        box = data["boxCloud"]
         area = data["searchArea"]
-        box = data["templateBox"]
 
         tf = self.tempFeat(temp, box)
         af = self.areaFeat(area)
-        predBox, predCls, vote_xyz, center_xyz, finalBox = self.joinFeat(tf, af)
+        predBox, predSeg, vote_xyz, center_xyz, finalBox = self.joinFeat(tf, af)
         return {
             "predBox": predBox,
-            "predCls": predCls,
+            "predSeg": predSeg,
             "vote_xyz": vote_xyz,
             "center_xyz": center_xyz,
             "finalBox": finalBox
@@ -36,15 +36,15 @@ class PGNN(nn.Module):
         Args:
             batch: {
                 "template": Tensor[B, D1, P1]
+                "boxCloud": Tensor[B, D3, P1]
                 "searchArea": Tensor[B, D1, P2]
-                "templateBox": Tensor[B, D3, P1]
-                "labelBox": List[Box * B]
-                "trackID": List[int * B]
+                "segLabel": List[Box * B]
+                "trueBox": List[B * Box]
             }
         """
         res = self(batch)
-        predCls = res['predCls']  # B,N
-        N = predCls.shape[1]
+        predSeg = res['predSeg']  # B,N
+        N = predSeg.shape[1]
         seg_label = batch['seg_label']
         sample_idxs = res['sample_idxs']  # B,N
         # update label
@@ -54,7 +54,7 @@ class PGNN(nn.Module):
         loss_dict = self.compute_loss(batch, res)
         loss = loss_dict['loss_objective'] * self.config.objective_weight \
                + loss_dict['loss_box'] * self.config.box_weight \
-               + loss_dict['loss_cls'] * self.config.cls_weight \
+               + loss_dict['loss_seg'] * self.config.cls_weight \
                + loss_dict['loss_vote'] * self.config.vote_weight
         return loss
 
@@ -63,14 +63,14 @@ class PGNN(nn.Module):
         Args:
             batch: {
                 "template": Tensor[B, D1, P1]
+                "boxCloud": Tensor[B, D3, P1]
                 "searchArea": Tensor[B, D1, P2]
-                "templateBox": Tensor[B, D3, P1]
-                "labelBox": List[Box * B]
-                "trackID": List[int * B]
+                "segLabel": List[Box * B]
+                "trueBox": List[B * Box]
             }
             output: {
                 "predBox": Tensor[B, 4+1, num_proposal]
-                "predCls": Tensor[B, N]
+                "predSeg": Tensor[B, N]
                 "vote_xyz": Tensor[B, N, 3]
                 "center_xyz": Tensor[B, num_proposal, 3]
                 "finalBox": [B, 4]
@@ -80,18 +80,18 @@ class PGNN(nn.Module):
             {
             "loss_objective": float
             "loss_box": float
-            "loss_cls": float
+            "loss_seg": float
             "loss_vote": float
         }
         """
         predBox = output['predBox']  # B,num_proposal,5
-        predCls = output['predCls']  # B,N
+        predSeg = output['predSeg']  # B,N
         seg_label = data['seg_label']
         box_label = data['box_label']  # B,4
         center_xyz = output["center_xyz"]  # B,num_proposal,3
         vote_xyz = output["vote_xyz"]
 
-        loss_cls = F.binary_cross_entropy_with_logits(predCls, seg_label)
+        loss_seg = F.binary_cross_entropy_with_logits(predSeg, seg_label)
 
         loss_vote = F.smooth_l1_loss(vote_xyz, box_label[:, None, :3].expand_as(vote_xyz), reduction='none')
         loss_vote = (loss_vote.mean(2) * seg_label).sum() / (seg_label.sum() + 1e-06)
@@ -117,6 +117,6 @@ class PGNN(nn.Module):
         return {
             "loss_objective": loss_objective,
             "loss_box": loss_box,
-            "loss_cls": loss_cls,
+            "loss_seg": loss_seg,
             "loss_vote": loss_vote,
         }

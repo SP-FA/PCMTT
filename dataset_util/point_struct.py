@@ -72,6 +72,5 @@ class KITTI_PointCloud(BasePointCloud):
             <np.array[4, n], np.float>
         """
         scan = np.fromfile(fileName, dtype=np.float32)
-        print(scan.shape)
         points = scan.reshape((-1, 4))[:, :4]
         return points.T
