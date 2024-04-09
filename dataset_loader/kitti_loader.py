@@ -29,11 +29,11 @@ class KITTI_Loader(BaseLoader):
         template_score = self.getScoreGaussian(target_box.center, self.sigma)
         search_score = self.getScoreGaussian(target_box.center, self.sigma)
         #转为tensor类型
-        template_area_tensor = self._point_cloud_to_tensor(template_area)
-        search_area_tensor = self._point_cloud_to_tensor(search_area)
+        template_area_tensor = self._point_cloud_to_tensor(template_area).float()
+        search_area_tensor = self._point_cloud_to_tensor(search_area).float()
         template_score_tensor = torch.tensor([template_score], dtype=torch.float32)
         search_score_tensor = torch.tensor([search_score], dtype=torch.float32)
-        box_tensor = target_box.to_tensor()
+        box_tensor = target_box.to_tensor().float()
 
         return template_area_tensor, search_area_tensor, template_score_tensor,search_score_tensor, box_tensor
 

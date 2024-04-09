@@ -95,9 +95,9 @@ class BasePointCloud:
 		center = box.center.reshape(-1, 1)  # [3, 1]
 		boxPoints = np.concatenate([center, corner], axis=1)  # [3, 9]
 		pp = self.points[:3, :].T  # [3, n]
-		pp = torch.tensor(pp)
+		pp = torch.tensor(pp).float()
 		boxPoints = boxPoints.T  # [3, 9]
-		boxPoints = torch.tensor(boxPoints)
+		boxPoints = torch.tensor(boxPoints).float()
 		return torch.cdist(pp, boxPoints)
 
 	def points_in_box(self, box: Box, returnMask=False):
