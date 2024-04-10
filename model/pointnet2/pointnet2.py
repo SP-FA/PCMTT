@@ -3,7 +3,6 @@ pointnet2.py
 Created by zenn at 2021/5/9 13:41
 """
 
-import torch
 import torch.nn as nn
 
 from model.pointnet2.utils.pointnet2_modules import PointnetSAModule

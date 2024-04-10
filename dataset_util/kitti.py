@@ -19,6 +19,7 @@ class KITTI_Util(BaseDataset):
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
+        self.search_offset = cfg.search_area_offset
         self._traj_list, self._traj_len_list = self._get_trajectory()
         if self._preloading:
             self._trainingSamples = self._load_data()
@@ -52,7 +53,7 @@ class KITTI_Util(BaseDataset):
 
     def _load_data(self):
         preloadPath = os.path.join(
-            self._path, f"preload_kitti_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat"
+            self._path, f"preload_kitti_{self._split}_{self._coordinate_mode}_{self.search_offset}"
         )
         if os.path.isfile(preloadPath):
             with open(preloadPath, 'rb') as f:
@@ -92,8 +93,9 @@ class KITTI_Util(BaseDataset):
                 df_traj = df_traj.sort_values(by=["frame"])
                 df_traj = df_traj.reset_index(drop=True)
                 trajectory = [traj for id, traj in df_traj.iterrows()]
-                traj_list.append(trajectory)
-                traj_len_list.append(len(trajectory))
+                if len(trajectory) > 1:
+                    traj_list.append(trajectory)
+                    traj_len_list.append(len(trajectory))
         return traj_list, traj_len_list
 
     def _get_frames_from_target(self, target):
@@ -148,12 +150,14 @@ class KITTI_Util(BaseDataset):
                 if self._coordinate_mode == "camera":
                     pc.transform(velo_to_cam)
                 self._velos[sceneID][frameID] = pc
-            # if self.preload_offset > 0:
-            #     pc = points_utils.crop_pc_axis_aligned(pc, bb, offset=self.preload_offset)
+            if self.cfg.full_area is False:
+                offset = self.search_offset * 2
+                searchOffset = [offset, offset, offset]
+                pc, _ = pc.points_in_box(bb, searchOffset)
         except:
-            print(f"The point cloud at scene {sceneID} frame {frameID} is missing.")
+            # print(f"The point cloud at scene {sceneID} frame {frameID} is missing.")
             pc = KITTI_PointCloud(np.array([[0, 0, 0]]).T)
-        return {"pc": pc, "3d_bbox": bb, "meta": target}
+        return {"pc": pc, "3d_bbox": bb}  # , "meta": target
 
     @staticmethod
     def _get_scene_list(split):
@@ -161,7 +165,7 @@ class KITTI_Util(BaseDataset):
             splitDict = {"train": [0], "valid": [18], "test": [19]}
         else:
             splitDict = {
-                "train": list(range(0, 17)),
+                "train": list(range(0, 2)),  # list(range(0, 17)),
                 "valid": list(range(17, 19)),
                 "test": list(range(19, 21))}
 

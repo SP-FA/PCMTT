@@ -12,7 +12,6 @@ class BaseDataset:
 		self._path = cfg.path
 		self._split = split
 		self._coordinate_mode = cfg.coordinate_mode
-		self._preload_offset = cfg.preload_offset
 		self._preloading = cfg.preloading
 
 	@property

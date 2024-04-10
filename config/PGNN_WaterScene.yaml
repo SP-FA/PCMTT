@@ -6,25 +6,24 @@ train_split: train
 valid_split: valid
 test_split: test
 coordinate_mode: velodyne
-preload_offset: -1
 
 # dataloader
 full_area: True
 search_area_offset:
-template_offset:
+template_offset: 0.3
 template_size: 32
 search_size: 256
-workers: 1
+workers: 12
 
 # train
 checkpoint: ./checkpoint
 batch_size: 64
-epoch: 1000
+epoch: 200
 pretrain:
 optimizer: adam
-lr: 0.01
+lr: 0.0001
 wd: 0.0001
-check_val_every_n_epoch: 10
+check_val_every_n_epoch: 1
 save_last: True
 use_fps: True
 normalize_xyz: True

@@ -1,36 +1,36 @@
 # dataset
 path: H:/E_extension/dataset/kitti
 dataset: kitti
-point_dim: 8
-train_split: train tiny
+point_dim: 3
+train_split: train
 valid_split: valid tiny
 test_split: test tiny
 coordinate_mode: velodyne
-preload_offset: -1
 
 # dataloader
 full_area: False
+rand_distortion_range: 0.3
 search_area_offset: 2
-template_offset: 0.3
 template_size: 512
 search_size: 1024
-workers: 10
+workers: 12
+box_enlarge_scale: 1.1
 
 # train
 checkpoint: ./checkpoint
-batch_size: 64
-epoch: 1000
+batch_size: 4
+epoch: 200
 pretrain:
 optimizer: adam
-lr: 0.01
-wd: 0.0001
-check_val_every_n_epoch: 10
+lr: 0.0001
+wd: 0.00001
+check_val_every_n_epoch: 1
 save_last: True
 use_fps: True
 normalize_xyz: True
 
 # loss
 object_weight: 1.5
-box_weight: 0.2
+box_weight: 1
 vote_weight: 1.0
-seg_weight: 0.2
+seg_weight: 1

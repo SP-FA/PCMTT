@@ -45,6 +45,12 @@ class FeatureFusion(nn.Module):
         finalBox = torch.gather(predBox, 1, finalBoxID.unsqueeze(-1).expand(-1, -1, predBox.size(-1)))
         finalBox = finalBox.squeeze(1)
 
+        assert torch.any(torch.isnan(predBox)) == torch.tensor(False)
+        assert torch.any(torch.isnan(predSeg)) == torch.tensor(False)
+        assert torch.any(torch.isnan(vote_xyz)) == torch.tensor(False)
+        assert torch.any(torch.isnan(center_xyz)) == torch.tensor(False)
+        assert torch.any(torch.isnan(finalBox)) == torch.tensor(False)
+
         # bestBoxID = torch.argmax(predBox[:, 4])  # [B, 1]
         # bestBox = predBox[bestBoxID]
         # bestBoxCenter = center_xyz[bestBoxID]

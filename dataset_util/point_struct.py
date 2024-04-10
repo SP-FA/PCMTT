@@ -64,6 +64,33 @@ class BasePointCloud:
         boxPoints = torch.tensor(boxPoints, dtype=torch.float)
         return torch.cdist(pp, boxPoints)
 
+    def crop_points(self, maxi, mini, offset=None, returnMask=False):
+        """
+        Return:
+            PointCloud
+        """
+        if offset is None:
+            offset = [0, 0, 0]
+
+        x1 = self.points[0, :] <= maxi[0] + offset[0]
+        x2 = self.points[0, :] >= mini[0] - offset[0]
+        y1 = self.points[1, :] <= maxi[1] + offset[1]
+        y2 = self.points[1, :] >= mini[1] - offset[1]
+        z1 = self.points[2, :] <= maxi[2] + offset[2]
+        z2 = self.points[2, :] >= mini[2] - offset[2]
+
+        includeIDs = np.logical_and(x1, x2)
+        includeIDs = np.logical_and(includeIDs, y1)
+        includeIDs = np.logical_and(includeIDs, y2)
+        includeIDs = np.logical_and(includeIDs, z1)
+        includeIDs = np.logical_and(includeIDs, z2)
+
+        dataName = self.__class__
+        cropped = dataName(self.points[:, includeIDs])
+        if returnMask:
+            return cropped, includeIDs
+        return cropped
+
     def points_in_box(self, box, offset=None, returnMask=False):
         """给定一个 Bounding box，返回在这个 box 内的点
         Returns:
@@ -74,9 +101,14 @@ class BasePointCloud:
         if offset is None:
             offset = [0, 0, 0]
 
-        newPoints = copy.deepcopy(self)
-        newBox = copy.deepcopy(box)
+        if returnMask is False:
+            maxi = box.center + np.max(box.wlh)
+            mini = box.center - np.max(box.wlh)
+            newPoints = self.crop_points(maxi, mini, offset)
+        else:
+            newPoints = copy.deepcopy(self)
 
+        newBox = copy.deepcopy(box)
         rotMat = box.rotation_matrix
         trans = box.center
 
@@ -85,26 +117,12 @@ class BasePointCloud:
         newBox.rotate(Quaternion(matrix=(np.transpose(rotMat))))
         newPoints.rotate(np.transpose(rotMat))
 
-        maxi = newBox.wlh / 2
+        maxi =  newBox.wlh / 2
         mini = -newBox.wlh / 2
-
-        x1 = newPoints.points[0, :] <= maxi[0] + offset[0]
-        x2 = newPoints.points[0, :] >= mini[0] - offset[0]
-        y1 = newPoints.points[1, :] <= maxi[1] + offset[1]
-        y2 = newPoints.points[1, :] >= mini[1] - offset[1]
-        z1 = newPoints.points[2, :] <= maxi[2] + offset[2]
-        z2 = newPoints.points[2, :] >= mini[2] - offset[2]
-
-        includeIDs = np.logical_and(x1, x2)
-        includeIDs = np.logical_and(includeIDs, y1)
-        includeIDs = np.logical_and(includeIDs, y2)
-        includeIDs = np.logical_and(includeIDs, z1)
-        includeIDs = np.logical_and(includeIDs, z2)
-
-        dataName = newPoints.__class__
-        pointInBox = dataName(newPoints.points[:, includeIDs])
+        pointInBox, includeIDs = newPoints.crop_points(maxi, mini, offset, True)
         pointInBox.rotate(rotMat)
         pointInBox.translate(trans)
+
         if returnMask:
             return pointInBox, pointInBox.box_cloud(box), includeIDs
         return pointInBox, pointInBox.box_cloud(box)

@@ -104,6 +104,9 @@ class Box:
         self.orient = quaternion * self.orient
         self.veloc = np.dot(quaternion.rotation_matrix, self.veloc)
 
+    def scale(self, ratio):
+        self.wlh *= ratio
+
     def transform(self, trans_mat):
         transformed = np.dot(trans_mat[0:3, 0:4].T, self.center)
         self.center = transformed[0:3] / transformed[3]

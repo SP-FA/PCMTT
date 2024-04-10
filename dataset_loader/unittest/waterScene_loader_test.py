@@ -32,7 +32,7 @@ class MyTestCase(unittest.TestCase):
         cfg = parse_config()
         cfg.path = "H:/E_extension/dataset/waterScene"
         cfg.preloading = True
-        water = WaterScene_Util(cfg)
+        water = WaterScene_Util(cfg, cfg.train_split)
         print(water.num_scenes)
         print(water.num_frames)
         print(water.num_trajectory)

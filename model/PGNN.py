@@ -1,10 +1,11 @@
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
 
+from model.DGN.dgn import DGN
 from model.feature_extraction.search_area_feature import SearchAreaFeatExtraction
 from model.feature_extraction.template_feature import TemplateFeatExtraction
 from model.feature_fusion import FeatureFusion
+from model.pointnet2.pointnet2 import Pointnet2
 
 
 class PGNN(nn.Module):
@@ -16,43 +17,25 @@ class PGNN(nn.Module):
         elif cfg.dataset.lower() == "kitti":
             dim = 3
 
-        self.tempFeat = TemplateFeatExtraction(dim).to(cfg.device)
-        self.areaFeat = SearchAreaFeatExtraction(cfg).to(cfg.device)
+        if cfg.dataset.lower() == "waterscene":
+            input_channels = 5
+        else:
+            input_channels = 0
+        self.pn2 = Pointnet2(cfg.use_fps, cfg.normalize_xyz, input_channels)  # [B, 256, P3]
+        self.dgn = DGN(dim)
+        self.tempFeat = TemplateFeatExtraction(self.pn2, self.dgn, dim).to(cfg.device)
+        self.areaFeat = SearchAreaFeatExtraction(cfg, self.pn2, self.dgn, dim).to(cfg.device)
         self.joinFeat = FeatureFusion(256, cfg).to(cfg.device)
 
     def forward(self, data):
-        temp = data["template"]
-        box = data["boxCloud"]
-        area = data["searchArea"]
+        temp = data["template"].to(self.device)
+        box = data["boxCloud"].to(self.device)
+        area = data["searchArea"].to(self.device)
 
         tf = self.tempFeat(temp, box)
+        tf += 1e-6
+        assert torch.any(torch.isnan(tf)) == torch.tensor(False)
         xyz, af, sample_idxs = self.areaFeat(area)
+        assert torch.any(torch.isnan(af)) == torch.tensor(False)
         res = self.joinFeat(tf, af, xyz)
         return res, sample_idxs
-
-    # def training_step(self, batch, batch_idx):
-    #     """
-    #     Args:
-    #         batch: {
-    #             "template": Tensor[B, D1, P1]
-    #             "boxCloud": Tensor[B, D3, P1]
-    #             "searchArea": Tensor[B, D1, P2]
-    #             "segLabel": List[Box * B]
-    #             "trueBox": List[B * Box]
-    #         }
-    #     """
-    #     res = self(batch)
-    #     # predSeg = res['predSeg']  # B,N
-    #     # N = predSeg.shape[1]
-    #     # seg_label = batch['seg_label']
-    #     # sample_idxs = res['sample_idxs']  # B,N
-    #     # update label
-    #     # seg_label = seg_label.gather(dim=1, index=sample_idxs[:, :N].long())  # B,N
-    #     # batch["seg_label"] = seg_label
-    #     # compute loss
-    #     loss_dict = self.compute_loss(batch, res)
-    #     loss = loss_dict['loss_objective'] * self.cfg.objective_weight + \
-    #            loss_dict['loss_box'] * self.cfg.box_weight + \
-    #            loss_dict['loss_seg'] * self.cfg.seg_weight + \
-    #            loss_dict['loss_vote'] * self.cfg.vote_weight
-    #     return loss

@@ -1,3 +1,5 @@
+import copy
+
 from pyquaternion import Quaternion
 
 from dataset_loader.base_loader import BaseLoader
@@ -13,11 +15,10 @@ class KITTI_Loader(BaseLoader):
         self.fullArea = cfg.full_area
         self.templateSize = cfg.template_size
         self.searchSize = cfg.search_size
-        self.temp_offset = cfg.template_offset
-        self.search_offset = cfg.search_area_offset
+        self.offset = cfg.search_area_offset
 
     def __len__(self):
-        return self.data.num_scenes
+        return self.data.num_frames
 
     def __getitem__(self, idx):
         trajID = torch.randint(0, self.data.num_trajectory, size=(1,)).item()
@@ -25,35 +26,37 @@ class KITTI_Loader(BaseLoader):
         chosenIDs = torch.multinomial(torch.ones(framesNum), num_samples=2).tolist()
         tempFrame, searchFrame = self.data.frames(trajID, chosenIDs)
 
-        tempOffset = np.random.uniform(low=-self.temp_offset, high=self.temp_offset, size=4)
-        tempOffset[3] = tempOffset[3] * np.deg2rad(5)
-        tempOffset[2] = 0
+        # get temp box
         tempBox = tempFrame['3d_bbox']
-        tempBox.translate(tempOffset[:-1])
-        tempBox.rotate(Quaternion(axis=[0, 0, 1], radians=tempOffset[-1]))
+        tempBox.scale(self.cfg.box_enlarge_scale)
+        offset = self.cfg.rand_distortion_range
+        tempOffset = np.random.uniform(low=-offset, high=offset, size=3)
+        tempBox.translate(np.array([tempOffset[0], tempOffset[1], 0]))
+        tempBox.rotate(Quaternion(axis=[0, 0, 1], radians=tempOffset[2] * np.deg2rad(5)))
 
+        # get template
         templatePoints = tempFrame['pc']
         template, _ = templatePoints.points_in_box(tempBox, returnMask=False)
         template, _ = template.regularize(self.templateSize)
-        boxCloud = template.box_cloud(tempFrame['3d_bbox'])
-        normTemplate = template.normalize()
+        # normTemplate = template.normalize()
 
-        searchPoints = searchFrame['pc']
+        # get box cloud
+        boxCloud = template.box_cloud(tempBox)
+
+        # get search area & true box
+        searchArea = searchFrame['pc']
         trueBox = searchFrame['3d_bbox']
-        if self.fullArea:
-            searchPoints, _ = searchPoints.regularize(self.searchSize)
-            _, _, segLabel = searchPoints.points_in_box(trueBox, returnMask=True)
-            searchArea = searchPoints
-        else:
-            searchOffset = [self.search_offset, self.search_offset, self.search_offset]
-            searchArea, _, segLabel = searchPoints.points_in_box(trueBox,offset=searchOffset, returnMask=True)
-            searchArea, selectIDs = searchArea.regularize(self.searchSize)
-            segLabel = segLabel[selectIDs]
+        if self.cfg.full_area is False:
+            searchArea, _ = searchArea.points_in_box(trueBox, [self.offset, self.offset, self.offset])
+
+        searchArea, _ = searchArea.regularize(self.searchSize)
+        _, _, segLabel = searchArea.points_in_box(trueBox, returnMask=True)
+
         return {
-            "template": normTemplate.to(self.cfg.device),
-            "boxCloud": boxCloud.clone().detach().to(self.cfg.device),
-            "searchArea": searchArea.convert2Tensor().to(self.cfg.device),
-            "segLabel": torch.tensor(segLabel).to(self.cfg.device),
+            "template": template.convert2Tensor(),
+            "boxCloud": boxCloud.clone().detach(),
+            "searchArea": searchArea.convert2Tensor(),
+            "segLabel": torch.tensor(segLabel).float(),
             "trueBox": torch.tensor([trueBox.center[0], trueBox.center[1], trueBox.center[2],
-                        trueBox.wlh[0], trueBox.wlh[1], trueBox.wlh[2], trueBox.theta]).view(-1).to(self.cfg.device)
+                        trueBox.wlh[0], trueBox.wlh[1], trueBox.wlh[2], trueBox.theta]).view(-1)
         }

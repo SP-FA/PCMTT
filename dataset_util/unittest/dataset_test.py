@@ -17,7 +17,7 @@ def load_yaml(file_name):
 
 def parse_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default="../../config/PGNN_WaterScene.yaml", help='the config_file')
+    parser.add_argument('--cfg', type=str, default="../../config/PGNN_KITTI.yaml", help='the config_file')
     parser.add_argument('--test', action='store_true', default=False, help='test mode')
     parser.add_argument('--preloading', action='store_true', default=False, help='preload dataset into memory')
 
@@ -30,13 +30,17 @@ def parse_config():
 class MyTestCase(unittest.TestCase):
     def test_kitti(self):
         cfg = parse_config()
-        cfg.path = "H:/fyp/Open3DSOT/kitti"
-        kitti = KITTI_Util(cfg)
+        cfg.path = "H:/E_extension/dataset/kitti"
+        kitti = KITTI_Util(cfg, cfg.train_split)
         print(kitti.num_scenes)
         print(kitti.num_frames)
         print(kitti.num_trajectory)
-        print(kitti.num_frames_trajectory(10))
-        print(kitti.frames(0, [0]))
+        for i in range(kitti.num_trajectory):
+            for j in range(kitti.num_frames_trajectory(i)):
+                f = kitti.frames(i, [j])
+                pc = f[0]['pc']
+                print(f"{i} {j} {pc.points.shape}")
+
 
     def test_waterscene(self):
         cfg = parse_config()

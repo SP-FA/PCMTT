@@ -19,6 +19,7 @@ class WaterScene_Util(BaseDataset):
         self._scene_list = self._get_scene_list(split)
         self._velos = defaultdict(dict)
         self._calibs = {}
+        self.search_offset = cfg.search_area_offset
         self._traj_list, self._traj_len_list = self._get_trajectory()
         if self._preloading:
             self._trainingSamples = self._load_data()
@@ -48,7 +49,7 @@ class WaterScene_Util(BaseDataset):
 
     def _load_data(self):
         preloadPath = os.path.join(
-            self._path, f"preload_waterscene_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat"
+            self._path, f"preload_waterscene_{self._split}_{self._coordinate_mode}_{self.search_offset}.dat"
         )
         if os.path.isfile(preloadPath):
             with open(preloadPath, 'rb') as f:
