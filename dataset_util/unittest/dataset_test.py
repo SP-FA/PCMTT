@@ -1,9 +1,6 @@
 import yaml
 import argparse
 import unittest
-import numpy as np
-from dataset_util.kitti import KITTI_Util
-from dataset_util.waterscene import WaterScene_Util
 from easydict import EasyDict
 from dataset_util.kitti import KITTI_Util
 from dataset_util.waterscene import WaterScene_Util
@@ -31,7 +28,6 @@ def parse_config():
 
 
 class MyTestCase(unittest.TestCase):
-
     def test_kitti(self):
         cfg = parse_config()
         cfg.path = "H:/E_extension/dataset/kitti"
@@ -55,6 +51,12 @@ class MyTestCase(unittest.TestCase):
         print(water.num_trajectory)
         print(water.num_frames_trajectory(0))
         # print(water.frames(1, [0]))
+
+        f = water.frames(1, [0])
+        p = f[0]['pc']
+        b = f[0]['3d_bbox']
+        p2, _ = p.points_in_box(b)
+        print(p2.points.shape)
 
 
 if __name__ == '__main__':
