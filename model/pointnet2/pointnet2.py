@@ -3,7 +3,6 @@ pointnet2.py
 Created by zenn at 2021/5/9 13:41
 """
 
-import torch
 import torch.nn as nn
 
 from model.pointnet2.utils.pointnet2_modules import PointnetSAModule
@@ -15,7 +14,7 @@ class Pointnet2(nn.Module):
         Semantic segmentation network that uses feature propogation layers
     """
 
-    def __init__(self, use_fps=False, normalize_xyz=False, return_intermediate=False, input_channels=0):
+    def __init__(self, use_fps=False, normalize_xyz=False, input_channels=0):  # , return_intermediate=False
         """
         Args:
             use_fps: 是否使用 fps 采样
@@ -24,7 +23,7 @@ class Pointnet2(nn.Module):
             input_channels: 除了 xyz 之外的维度数量
         """
         super(Pointnet2, self).__init__()
-        self.return_intermediate = return_intermediate
+        # self.return_intermediate = return_intermediate
         self.SA_modules = nn.ModuleList()
         self.SA_modules.append(
             PointnetSAModule(
@@ -73,6 +72,6 @@ class Pointnet2(nn.Module):
             l_xyz.append(li_xyz)
             l_features.append(li_features)
             l_idxs.append(sample_idxs)
-        if self.return_intermediate:
-            return l_xyz[1:], l_features[1:], l_idxs[0]
-        return l_xyz[-1], l_features[-1], l_idxs[0]
+        # if self.return_intermediate:
+        #     return l_xyz[1:], l_features[1:], l_idxs[0]
+        return l_xyz[-1], l_features[-1], l_idxs[-1]

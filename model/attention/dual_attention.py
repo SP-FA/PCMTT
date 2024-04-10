@@ -40,7 +40,7 @@ class DualAttention(nn.Module):
 
         feat_sum = sa_conv + sc_conv
         sasc_output = self.conv8(feat_sum)
-        return sasc_output, sa_output, sc_output
+        return sasc_output
 
 
 class PositionAttention(nn.Module):
@@ -59,7 +59,7 @@ class PositionAttention(nn.Module):
         """
         Args:
             x1 Tensor[B, C, P1]: q, v, Template
-            x2 Tensor[B, C, P2]: k, SearchArea
+            x2 Tensor[B, C, P3]: k, SearchArea
         """
         B, C, P1 = x1.size()
         q = self.Q(x1).view(B, -1, P1).permute(0, 2, 1)  # [B, P1, C]
@@ -68,17 +68,20 @@ class PositionAttention(nn.Module):
             k = self.K(x1).view(B, -1, P1)
         else:
             B, C, P2 = x2.size()
-            k = self.K(x2).view(B, -1, P2)  # [B, C, P2]
+            k = self.K(x2).view(B, -1, P2)  # [B, C, P3]
 
-        energy = torch.bmm(q, k)  # [B, P1, P2]
+        energy = torch.bmm(q, k)  # [B, P1, P3]
         attention = self.softmax(energy)
 
         if x2 is None:
             out = torch.bmm(v, attention.permute(0, 2, 1))  # [B, C, P1]
             out = out.view(B, C, P1)
         else:
-            out = torch.bmm(v, attention)  # [B, C, P2]
+            out = torch.bmm(v, attention)  # [B, C, P3]
             out = out.view(B, C, P2)
+
+        if x2 is not None:
+            return self.alpha * out + x2
         return self.alpha * out + x1
 
 

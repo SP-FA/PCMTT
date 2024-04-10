@@ -6,12 +6,13 @@ class Box:
     """存储 3d box，包括 label, score and velocity
     """
 
-    def __init__(self, center, size, orient, label=np.nan, score=np.nan,
+    def __init__(self, center, size, theta, orient, label=np.nan, score=np.nan,
                  veloc=(np.nan, np.nan, np.nan)):  # , name=None
         """
         Args:
             center (Tuple(float, float, float)): Center of box, x, y, z
             size (Tuple(float, float, float)): width, length, height
+            theta (float): rad
             orient: (Quaternion)
             label (int): label, optional
             score (float): Classification score, optional
@@ -25,6 +26,7 @@ class Box:
 
         self.center = np.array(center)
         self.wlh = np.array(size)
+        self.theta = theta
         self.orient = orient
         self.label = int(label) if not np.isnan(label) else label
         self.score = float(score) if not np.isnan(score) else score
@@ -101,6 +103,9 @@ class Box:
         self.center = np.dot(quaternion.rotation_matrix, self.center)
         self.orient = quaternion * self.orient
         self.veloc = np.dot(quaternion.rotation_matrix, self.veloc)
+
+    def scale(self, ratio):
+        self.wlh *= ratio
 
     def transform(self, trans_mat):
         transformed = np.dot(trans_mat[0:3, 0:4].T, self.center)
