@@ -17,7 +17,7 @@ def load_yaml(file_name):
 
 def parse_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default="../../config/PGNN_WaterScene.yaml", help='the config_file')
+    parser.add_argument('--cfg', type=str, default="../../config/PGNN.yaml", help='the config_file')
     parser.add_argument('--test', action='store_true', default=False, help='test mode')
     parser.add_argument('--preloading', action='store_true', default=False, help='preload dataset into memory')
 
@@ -32,7 +32,7 @@ class MyTestCase(unittest.TestCase):
         cfg = parse_config()
         cfg.path = "H:/E_extension/dataset/waterScene"
         cfg.preloading = True
-        water = WaterScene_Util(cfg, cfg.train_split)
+        water = WaterScene_Util(cfg)
         print(water.num_scenes)
         print(water.num_frames)
         print(water.num_trajectory)

@@ -38,9 +38,7 @@ class KITTI_Util(BaseDataset):
 
     @property
     def num_frames(self):
-        list_len = self._traj_len_list
-        sum_list = sum(list_len)
-        return sum_list
+        return sum(self._traj_len_list)
 
     def num_frames_trajectory(self, trajID):
         return self._traj_len_list[trajID]
@@ -52,7 +50,6 @@ class KITTI_Util(BaseDataset):
             traj = self._traj_list[trajID]
             frames = [self._get_frames_from_target(traj[frameID]) for frameID in frameIDs]
         return frames
-
 
     def _load_data(self):
         preloadPath = os.path.join(

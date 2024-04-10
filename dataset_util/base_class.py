@@ -1,7 +1,6 @@
 import copy
 import numpy as np
 import torch
-import torch.nn.functional as F
 from pyquaternion import Quaternion
 
 from dataset_util.box_struct import Box

@@ -13,17 +13,15 @@ from dataset_util.box_struct import Box
 
 
 class WaterScene_Util(BaseDataset):
-    def __init__(self, cfg, split):
-        super().__init__(cfg, split)
+    def __init__(self, cfg):
+        super().__init__(cfg)
         # self._WaterScene_root = path
-        self._scene_list = self._get_scene_list(split)
+        self._scene_list = self._get_scene_list(cfg.split)
         self._velos = defaultdict(dict)
         self._calibs = {}
-        self.search_offset = cfg.search_area_offset
         self._traj_list, self._traj_len_list = self._get_trajectory()
         if self._preloading:
             self._trainingSamples = self._load_data()
-
 
     @property
     def num_scenes(self):
@@ -50,7 +48,7 @@ class WaterScene_Util(BaseDataset):
 
     def _load_data(self):
         preloadPath = os.path.join(
-            self._path, f"preload_waterscene_{self._split}_{self._coordinate_mode}_{self.search_offset}.dat"
+            self._path, f"preload_waterscene_{self._split}_{self._coordinate_mode}_{self._preload_offset}.dat"
         )
         if os.path.isfile(preloadPath):
             with open(preloadPath, 'rb') as f:
@@ -130,7 +128,7 @@ class WaterScene_Util(BaseDataset):
             #     axis=[0, 0, -1], radians=target["rotation_y"]) * Quaternion(
             #         axis=[0, 0, -1], degrees=90)
             orientation = Quaternion(axis=[0, 0, 1], radians=target["rotation_y"])
-            bb = Box(center, size, target["rotation_y"], orientation)
+            bb = Box(center, size, orientation)
         else:
             ...
 
@@ -154,10 +152,10 @@ class WaterScene_Util(BaseDataset):
     def _get_scene_list(split):
         if "tiny" in split.lower():
             # splitDict = {"train": [2], "valid": [8], "test": [17]}
-            splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
-        else:
             splitDict = {"train": [2, 6, 7, 8, 17], "valid": [8], "test": [17]}
-        
+        else:
+            splitDict = {"train": [2, 6, 7], "valid": [8], "test": [17]}
+
         if "train" in split.lower():
             sceneNames = splitDict["train"]
         elif "valid" in split.lower():
