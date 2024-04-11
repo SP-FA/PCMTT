@@ -25,6 +25,7 @@ def get_graph_feature(x, k):
     idx = knn(x, k)  # [B, N, k]
     x = x.transpose(2, 1).contiguous()  # [B, N, C]
     C = x.shape[-1]
-    feature = torch.gather(x.unsqueeze(2), 1, idx.unsqueeze(-1).expand(-1, -1, -1, C))  # [B, N, k, C]
+    x = x.unsqueeze(2).expand(-1, -1, k, -1)
+    idx = idx.unsqueeze(-1).expand(-1, -1, -1, C)
+    feature = torch.gather(x, 1, idx)  # [B, N, k, C]
     return feature
-

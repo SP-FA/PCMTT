@@ -91,8 +91,15 @@ class BasePointCloud:
             return cropped, includeIDs
         return cropped
 
-    def points_in_box(self, box, offset=None, returnMask=False):
+    def points_in_box(self, box, offset=None, returnMask=False, center=False):
         """给定一个 Bounding box，返回在这个 box 内的点
+
+        Args:
+            box (Box): Bounding box
+            offset (float): 在 box 的 wlh 基础上额外增加的偏移量
+            returnMask (bool): 是否返回哪些点在 box 内的 mask
+            center (bool): 是否使点的中心在原点处
+
         Returns:
             WaterScene_PointCloud | KITTI_PointCloud: 在 box 内的点云，未进行 normalize
             Tensor[N, 9]: box cloud 向量，对于每个点，返回相对于 box 8 个 corner + 中心点 的距离
@@ -120,8 +127,10 @@ class BasePointCloud:
         maxi =  newBox.wlh / 2
         mini = -newBox.wlh / 2
         pointInBox, includeIDs = newPoints.crop_points(maxi, mini, offset, True)
-        pointInBox.rotate(rotMat)
-        pointInBox.translate(trans)
+
+        if not center:
+            pointInBox.rotate(rotMat)
+            pointInBox.translate(trans)
 
         if returnMask:
             return pointInBox, pointInBox.box_cloud(box), includeIDs

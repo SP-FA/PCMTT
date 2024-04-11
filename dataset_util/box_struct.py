@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from pyquaternion import Quaternion
 
@@ -106,6 +108,18 @@ class Box:
 
     def scale(self, ratio):
         self.wlh *= ratio
+
+    def get_offset_box(self, offset, ratio=1):
+        """根据 offset 和 ratio 调整 box 并返回调整后的 box
+
+        Args:
+            offset (List[float * 3]): x, y 的偏移和绕 z 旋转的角度
+        """
+        new_box = copy.deepcopy(self)
+        new_box.scale(ratio)
+        new_box.translate([offset[0], offset[1], 0])
+        new_box.rotate(Quaternion(axis=[0, 0, 1], radians=offset[2] * np.deg2rad(5)))
+        return new_box
 
     def transform(self, trans_mat):
         transformed = np.dot(trans_mat[0:3, 0:4].T, self.center)

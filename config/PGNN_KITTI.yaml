@@ -14,7 +14,7 @@ search_area_offset: 2
 template_size: 512
 search_size: 1024
 workers: 12
-box_enlarge_scale: 1.1
+box_enlarge_scale: 1.25
 
 # train
 checkpoint: ./checkpoint
