@@ -152,7 +152,7 @@ class KITTI_Util(BaseDataset):
                     pc.transform(velo_to_cam)
                 self._velos[sceneID][frameID] = pc
             if self.cfg.full_area is False:
-                offset = self.search_offset * 2
+                offset = self.search_offset * 2 * self.cfg.box_enlarge_scale
                 searchOffset = [offset, offset, offset]
                 pc, _ = pc.points_in_box(bb, searchOffset)
         except:

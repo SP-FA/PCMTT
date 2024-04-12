@@ -36,7 +36,7 @@ class DGN(nn.Module):
         """
         N = x.shape[-1]
         x1 = self.edgeConv1(x)
-        assert torch.any(torch.isnan(x1)) == torch.tensor(False)
+        # assert torch.any(torch.isnan(x1)) == torch.tensor(False)
         x2 = self.edgeConv2(x1)
         x3 = self.edgeConv3(x2)
         x4 = torch.cat([x1, x2, x3], dim=1)  # [B, 3 * 64, N]

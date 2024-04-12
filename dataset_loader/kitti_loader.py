@@ -75,5 +75,5 @@ class KITTI_Loader(BaseLoader):
             "searchArea": searchArea.convert2Tensor(),
             "segLabel": torch.tensor(segLabel).float(),
             "trueBox": torch.tensor([trueBox.center[0], trueBox.center[1], trueBox.center[2],
-                                     trueBox.wlh[0], trueBox.wlh[1], trueBox.wlh[2], -sampleBox[2]]).view(-1)
+                                     trueBox.wlh[0], trueBox.wlh[1], trueBox.wlh[2], -searchOffset[2]]).view(-1)
         }
