@@ -109,17 +109,35 @@ class Box:
     def scale(self, ratio):
         self.wlh *= ratio
 
-    def get_offset_box(self, offset, ratio=1):
+    def get_offset_box(self, offset, ratio=1, limit=False):
         """根据 offset 和 ratio 调整 box 并返回调整后的 box
 
         Args:
             offset (List[float * 3]): x, y 的偏移和绕 z 旋转的角度
+            ratio (float): 放缩比例
+            limit (bool): 是否限制 offset 大小不超过 wlh
         """
-        new_box = copy.deepcopy(self)
-        new_box.scale(ratio)
-        new_box.translate([offset[0], offset[1], 0])
-        new_box.rotate(Quaternion(axis=[0, 0, 1], radians=offset[2] * np.deg2rad(5)))
-        return new_box
+
+        newBox = copy.deepcopy(self)
+        rotMat = Quaternion(matrix=self.rotation_matrix)
+        trans = np.array(self.center)
+
+        newBox.translate(-trans)
+        newBox.rotate(rotMat.inverse)
+
+        if limit:
+            if offset[0] > newBox.wlh[0]:
+                offset[0] = np.random.uniform(-1, 1)
+            if offset[1] > min(newBox.wlh[1], 2):
+                offset[1] = np.random.uniform(-1, 1)
+
+        newBox.rotate(Quaternion(axis=[0, 0, 1], degrees=offset[2]))
+        newBox.translate([offset[0], offset[1], 0])
+        newBox.scale(ratio)
+
+        newBox.rotate(rotMat)
+        newBox.translate(trans)
+        return newBox
 
     def transform(self, trans_mat):
         transformed = np.dot(trans_mat[0:3, 0:4].T, self.center)

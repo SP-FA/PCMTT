@@ -64,20 +64,17 @@ class BasePointCloud:
         boxPoints = torch.tensor(boxPoints, dtype=torch.float)
         return torch.cdist(pp, boxPoints)
 
-    def crop_points(self, maxi, mini, offset=None, returnMask=False):
+    def crop_points(self, maxi, mini, returnMask=False):
         """
         Return:
             PointCloud
         """
-        if offset is None:
-            offset = [0, 0, 0]
-
-        x1 = self.points[0, :] <= maxi[0] + offset[0]
-        x2 = self.points[0, :] >= mini[0] - offset[0]
-        y1 = self.points[1, :] <= maxi[1] + offset[1]
-        y2 = self.points[1, :] >= mini[1] - offset[1]
-        z1 = self.points[2, :] <= maxi[2] + offset[2]
-        z2 = self.points[2, :] >= mini[2] - offset[2]
+        x1 = self.points[0, :] <= maxi[0]
+        x2 = self.points[0, :] >= mini[0]
+        y1 = self.points[1, :] <= maxi[1]
+        y2 = self.points[1, :] >= mini[1]
+        z1 = self.points[2, :] <= maxi[2]
+        z2 = self.points[2, :] >= mini[2]
 
         includeIDs = np.logical_and(x1, x2)
         includeIDs = np.logical_and(includeIDs, y1)
@@ -108,33 +105,39 @@ class BasePointCloud:
         if offset is None:
             offset = [0, 0, 0]
 
-        if returnMask is False:
-            maxi = box.center + np.max(box.wlh)
-            mini = box.center - np.max(box.wlh)
-            newPoints = self.crop_points(maxi, mini, offset)
-        else:
-            newPoints = copy.deepcopy(self)
-
-        newBox = copy.deepcopy(box)
+        trans  = box.center
         rotMat = box.rotation_matrix
-        trans = box.center
+        newBox = copy.deepcopy(box)
+
+        if returnMask is False:
+            maxi = newBox.center + np.max(newBox.wlh) + np.max(offset)
+            mini = newBox.center - np.max(newBox.wlh) - np.max(offset)
+            newPoints = self.crop_points(maxi, mini)
+            # dataName = self.__class__
+            # newPoints = dataName(self.points.copy())
+        else:
+            # newPoints = copy.deepcopy(self)
+            dataName = self.__class__
+            newPoints = dataName(self.points.copy())
 
         newBox.translate(-trans)
         newPoints.translate(-trans)
-        newBox.rotate(Quaternion(matrix=(np.transpose(rotMat))))
         newPoints.rotate(np.transpose(rotMat))
+        newBox.rotate(Quaternion(matrix=np.transpose(rotMat)))
 
-        maxi =  newBox.wlh / 2
-        mini = -newBox.wlh / 2
-        pointInBox, includeIDs = newPoints.crop_points(maxi, mini, offset, True)
+        maxi =  newBox.wlh / 2 + offset
+        mini = -newBox.wlh / 2 - offset
+        pointInBox, includeIDs = newPoints.crop_points(maxi, mini, True)
 
         if not center:
             pointInBox.rotate(rotMat)
             pointInBox.translate(trans)
+            newBox.rotate(Quaternion(matrix=rotMat))
+            newBox.translate(trans)
 
         if returnMask:
-            return pointInBox, pointInBox.box_cloud(box), includeIDs
-        return pointInBox, pointInBox.box_cloud(box)
+            return pointInBox, pointInBox.box_cloud(newBox), includeIDs
+        return pointInBox, pointInBox.box_cloud(newBox)
 
     def normalize(self):
         return F.normalize(self.convert2Tensor(), dim=-1)

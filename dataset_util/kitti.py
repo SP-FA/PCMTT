@@ -98,7 +98,6 @@ class KITTI_Util(BaseDataset):
                     traj_len_list.append(len(trajectory))
         return traj_list, traj_len_list
 
-
     def _get_frames_from_target(self, target):
         """从某个目标的某一帧用获取点云和 box 信息 (frame)
            暂时不处理图像。
@@ -126,7 +125,7 @@ class KITTI_Util(BaseDataset):
             self._calibs[sceneID] = calib
 
         velo_to_cam = np.vstack((calib["Tr_velo_cam"], np.array([0, 0, 0, 1])))
-        if self._coordinate_mode == "velodrome":
+        if self._coordinate_mode == "velodyne":
             box_center_cam = np.array([target["x"], target["y"] - target["height"] / 2, target["z"], 1])
             box_center_velo = np.dot(np.linalg.inv(velo_to_cam), box_center_cam)
             box_center_velo = box_center_velo[:3]
@@ -151,10 +150,10 @@ class KITTI_Util(BaseDataset):
                 if self._coordinate_mode == "camera":
                     pc.transform(velo_to_cam)
                 self._velos[sceneID][frameID] = pc
-            if self.cfg.full_area is False:
-                offset = self.search_offset * 2 * self.cfg.box_enlarge_scale
-                searchOffset = [offset, offset, offset]
-                pc, _ = pc.points_in_box(bb, searchOffset)
+            # if self.cfg.full_area is False:
+            #     offset = max(bb.wlh) + self.search_offset * 2 * self.cfg.box_enlarge_scale
+            #     searchOffset = [offset, offset, offset]
+            #     pc, _ = pc.points_in_box(bb, searchOffset)
         except:
             # print(f"The point cloud at scene {sceneID} frame {frameID} is missing.")
             pc = KITTI_PointCloud(np.array([[0, 0, 0]]).T)
@@ -163,10 +162,10 @@ class KITTI_Util(BaseDataset):
     @staticmethod
     def _get_scene_list(split):
         if "tiny" in split.lower():
-            splitDict = {"train": list(range(0,21)), "valid": [18], "test": [19]}
+            splitDict = {"train": [0], "valid": [18], "test": [19]}
         else:
             splitDict = {
-                "train": list(range(0, 2)),  # list(range(0, 17)),
+                "train": list(range(0, 7)),  # list(range(0, 17)),
                 "valid": list(range(17, 19)),
                 "test": list(range(19, 21))}
 

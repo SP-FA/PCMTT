@@ -41,7 +41,7 @@ def parse_config():
     return EasyDict(config)
 
 
-def criterion(batch, output):
+def criterion(batch, output, sample_idxs):
     """
     Args:
         batch: {
@@ -69,57 +69,36 @@ def criterion(batch, output):
     """
     predBox = output['predBox']  # B,num_proposal,5
     predSeg = output['predSeg']  # B,N
+    segLabel = batch['segLabel'].to(cfg.device)
+    trueBox = batch['trueBox'].to(cfg.device)  # B,4
     center_xyz = output["center_xyz"]  # B,num_proposal,3
     vote_xyz = output["vote_xyz"]
-    segLabel = batch['segLabel']
-    trueBox = batch['trueBox'].to(cfg.device)
-    segLabel = batch['segLabel'].to(cfg.device)
-    M = sample_idxs.shape[1]
-    segLabel = segLabel.gather(dim=1, index=sample_idxs[:, :M].long())
-    segLabel = segLabel.float()
+
+    # N = predSeg.shape[1]
+    # segLabel = segLabel.gather(dim=1, index=sample_idxs[:, :N].long())
 
     loss_seg = F.binary_cross_entropy_with_logits(predSeg, segLabel)
-    assert torch.any(torch.isnan(predSeg)) == torch.tensor(False)
-    assert torch.any(torch.isnan(loss_seg)) == torch.tensor(False)
 
-    loss_vote = F.smooth_l1_loss(vote_xyz, trueBox[:, None, :3].expand_as(vote_xyz), reduction='none')
+    loss_vote = F.smooth_l1_loss(vote_xyz, trueBox[:, None, :3].expand_as(vote_xyz), reduction='none')  # B,N,3
     loss_vote = (loss_vote.mean(2) * segLabel).sum() / (segLabel.sum() + 1e-06)
-    assert torch.any(torch.isnan(loss_vote)) == torch.tensor(False)
 
     dist = torch.sum((center_xyz - trueBox[:, None, :3]) ** 2, dim=-1)
+
     dist = torch.sqrt(dist + 1e-6)  # B, K
-
-    object_label = torch.zeros_like(dist, dtype=torch.float)
-    object_label[dist < 0.3] = 1
-    object_score = predBox[:, :, 4]  # B, K
-    object_mask = torch.zeros_like(object_label, dtype=torch.float)
-    object_mask[dist < 0.3] = 1
-    object_mask[dist > 0.6] = 1
-
-    loss_objective = F.binary_cross_entropy_with_logits(object_score, object_label,
+    objectness_label = torch.zeros_like(dist, dtype=torch.float)
+    objectness_label[dist < 0.3] = 1
+    objectness_score = predBox[:, :, 4]  # B, K
+    objectness_mask = torch.zeros_like(objectness_label, dtype=torch.float)
+    objectness_mask[dist < 0.3] = 1
+    objectness_mask[dist > 0.6] = 1
+    loss_objective = F.binary_cross_entropy_with_logits(objectness_score, objectness_label,
                                                         pos_weight=torch.tensor([2.0]).cuda())
-    loss_objective = torch.sum(loss_objective * object_mask) / (
-            torch.sum(object_mask) + 1e-6)
-    assert torch.any(torch.isnan(loss_objective)) == torch.tensor(False)
-
-    # near_object_score = object_score[dist < 0.3]
-    # far_object_score  = object_score[dist > 0.6]
-    # far_object_score  = 1 - far_object_score
-    # near_loss_objective = F.binary_cross_entropy_with_logits(near_object_score, object_label[dist < 0.3],
-    #                                                     pos_weight=torch.tensor([2.0]).to(cfg.device))
-    # far_loss_objective  = F.binary_cross_entropy_with_logits(far_object_score, object_label[dist > 0.6],
-    #                                                     pos_weight=torch.tensor([2.0]).to(cfg.device))
-    # loss_objective = near_loss_objective + far_loss_objective
-    # assert torch.any(torch.isnan(near_loss_objective)) == torch.tensor(False)
-    # assert torch.any(torch.isnan(far_loss_objective)) == torch.tensor(False)
-
-    # loss_objective = torch.sum(loss_objective * object_mask) / (torch.sum(object_mask) + 1e-6)
-
+    loss_objective = torch.sum(loss_objective * objectness_mask) / (
+            torch.sum(objectness_mask) + 1e-6)
     loss_box = F.smooth_l1_loss(predBox[:, :, :4],
                                 trueBox[:, None, :4].expand_as(predBox[:, :, :4]),
                                 reduction='none')
-    loss_box = torch.sum(loss_box.mean(2) * object_label) / (object_label.sum() + 1e-6)
-    assert torch.any(torch.isnan(loss_box)) == torch.tensor(False)
+    loss_box = torch.sum(loss_box.mean(2) * objectness_label) / (objectness_label.sum() + 1e-6)
 
     totalLoss = loss_objective * cfg.object_weight + \
                 loss_box * cfg.box_weight + \
@@ -140,7 +119,7 @@ if __name__ == "__main__":
         model = torch.load(cfg.pretrain)
 
     if cfg.optimizer.lower() == 'sgd':
-        optim = SGD(model.parameters(), lr=cfg.lr, momentum=0.9, weight_decay=cfg.wd)
+        optim = SGD(model.parameters(), lr=cfg.lr, momentum=0.9)
     else:
         optim = Adam(model.parameters(), lr=cfg.lr, betas=(0.5, 0.999), eps=1e-06)  # , weight_decay=cfg.wd
 
@@ -169,7 +148,7 @@ if __name__ == "__main__":
             model.train()
             for batch in trainLoader:
                 res, sample_idxs = model(batch)
-                loss = criterion(batch, res)
+                loss = criterion(batch, res, sample_idxs)
 
                 optim.zero_grad()
                 loss.backward()
@@ -180,10 +159,10 @@ if __name__ == "__main__":
                 tb = batch['trueBox'][0]
                 tb = tb.cpu().detach().numpy()
                 fb = fb.cpu().detach().numpy()
-                trueBox    = Box((tb[0], tb[1], tb[2]), (tb[3], tb[4], tb[5]), tb[6], Quaternion(axis=[0, 0, 1], radians=tb[6]))
-                pridictBox = Box((fb[0], fb[1], fb[2]), (tb[3], tb[4], tb[5]), tb[6], Quaternion(axis=[0, 0, 1], radians=tb[6]))
-                # print(f"true: {trueBox}")
-                # print(pridictBox)
+                trueBox    = Box((tb[0], tb[1], tb[2]), (tb[3], tb[4], tb[5]), tb[6], Quaternion(axis=[0, 0, 1], degrees=tb[6]))
+                pridictBox = Box((fb[0], fb[1], fb[2]), (tb[3], tb[4], tb[5]), fb[3], Quaternion(axis=[0, 0, 1], degrees=fb[3]))
+                #print(f"true: {trueBox}")
+                #print(f"      {pridictBox}")
 
                 # pridictBoxList.append(pridictBox)
                 overlap = estimateOverlap(trueBox, pridictBox)
@@ -213,15 +192,15 @@ if __name__ == "__main__":
             for batch in validLoader:
                 with torch.no_grad():
                     res, sample_idxs = model(batch)
-                    loss = criterion(batch, res)
+                    loss = criterion(batch, res, sample_idxs)
                     validLoss += loss
 
                 fb = res['finalBox'][0]
                 tb = batch['trueBox'][0]
                 tb = tb.cpu().detach().numpy()
                 fb = fb.cpu().detach().numpy()
-                trueBox    = Box((tb[0], tb[1], tb[2]), (tb[3], tb[4], tb[5]), tb[6], Quaternion(axis=[0, 0, 1], radians=tb[6]))
-                pridictBox = Box((fb[0], fb[1], fb[2]), (tb[3], tb[4], tb[5]), tb[6], Quaternion(axis=[0, 0, 1], radians=tb[6]))
+                trueBox    = Box((tb[0], tb[1], tb[2]), (tb[3], tb[4], tb[5]), tb[6], Quaternion(axis=[0, 0, 1], degrees=tb[6]))
+                pridictBox = Box((fb[0], fb[1], fb[2]), (tb[3], tb[4], tb[5]), fb[3], Quaternion(axis=[0, 0, 1], degrees=fb[3]))
 
                 # pridictBoxList.append(pridictBox)
                 overlap = estimateOverlap(trueBox, pridictBox)

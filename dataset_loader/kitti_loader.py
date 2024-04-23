@@ -2,9 +2,12 @@ import copy
 
 from pyquaternion import Quaternion
 
+from dataset_loader import points_utils
 from dataset_loader.base_loader import BaseLoader
 import torch
 import numpy as np
+
+from dataset_util.point_struct import KITTI_PointCloud
 
 
 class KITTI_Loader(BaseLoader):
@@ -22,10 +25,10 @@ class KITTI_Loader(BaseLoader):
 
     def __getitem__(self, idx):
         """
-        {
-            "template": tensor,
+        return {
+            "template": tensor[P1, D1],
             "boxCloud": tensor,
-            "searchArea": tensor,
+            "searchArea": tensor[P2, D1],
             "segLabel": tensor,
             "trueBox": tensor[delta center * 3, wlh * 3, delta degree]
         }
@@ -38,6 +41,7 @@ class KITTI_Loader(BaseLoader):
         # get temp box
         rng = self.cfg.rand_distortion_range
         tempOffset = np.random.uniform(low=-rng, high=rng, size=3)
+        tempOffset[2] = tempOffset[2] * 5
         tempBox = tempFrame['3d_bbox']
         tempBox = tempBox.get_offset_box(tempOffset, self.cfg.box_enlarge_scale)
 
@@ -48,14 +52,14 @@ class KITTI_Loader(BaseLoader):
         # normTemplate = template.normalize()
 
         # get box cloud
-        boxCloud = template.box_cloud(tempBox)
+        boxCloud = template.box_cloud(tempBox)  # TODO: 这个有 Bug，要改
 
         # get search area & true box
         searchArea = searchFrame['pc']
         trueBox = searchFrame['3d_bbox']
         searchOffset = self.gaussian.sample(1)[0]
         sampleBox = copy.deepcopy(trueBox)
-        sampleBox = sampleBox.get_offset_box(searchOffset, self.cfg.box_enlarge_scale)
+        sampleBox = sampleBox.get_offset_box(searchOffset, self.cfg.box_enlarge_scale, limit=True)
 
         if self.cfg.full_area:
             searchArea.translate(-sampleBox.center)
@@ -67,7 +71,7 @@ class KITTI_Loader(BaseLoader):
         trueBox.rotate(Quaternion(matrix=sampleBox.rotation_matrix.T))
 
         searchArea, _ = searchArea.regularize(self.searchSize)
-        _, _, segLabel = searchArea.points_in_box(trueBox, returnMask=True)
+        _, _, segLabel = searchArea.points_in_box(trueBox, returnMask=True, center=True)
 
         return {
             "template": template.convert2Tensor(),

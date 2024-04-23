@@ -21,10 +21,14 @@ class PGNN(nn.Module):
             input_channels = 5
         else:
             input_channels = 0
-        self.pn2 = Pointnet2(cfg.use_fps, cfg.normalize_xyz, input_channels)  # [B, 256, P3]
-        self.dgn = DGN(dim)
-        self.tempFeat = TemplateFeatExtraction(self.pn2, self.dgn, dim).to(cfg.device)
-        self.areaFeat = SearchAreaFeatExtraction(cfg, self.pn2, self.dgn, dim).to(cfg.device)
+
+        if cfg.backbone.lower() == "dgn":
+            self.backbone = DGN(dim)
+        else:
+            self.backbone = Pointnet2(cfg.use_fps, cfg.normalize_xyz, input_channels)  # [B, 256, P3]
+
+        self.tempFeat = TemplateFeatExtraction(self.backbone, dim, cfg).to(cfg.device)
+        self.areaFeat = SearchAreaFeatExtraction(self.backbone, dim, cfg).to(cfg.device)
         self.joinFeat = FeatureFusion(256, cfg).to(cfg.device)
 
     def forward(self, data):
