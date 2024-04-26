@@ -8,6 +8,7 @@ from pyquaternion import Quaternion
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+from tqdm import tqdm
 
 from dataset_loader.kitti_loader import KITTI_Loader
 from dataset_loader.waterScene_loader import WaterScene_Loader
@@ -146,7 +147,8 @@ if __name__ == "__main__":
             Precision_train = Precision()
 
             model.train()
-            for batch in trainLoader:
+            trainBar = tqdm(trainLoader)
+            for batch in trainBar:
                 res, sample_idxs = model(batch)
                 loss = criterion(batch, res, sample_idxs)
 
@@ -171,8 +173,13 @@ if __name__ == "__main__":
                 Success_train.add_overlap(overlap)
                 Precision_train.add_accuracy(accuracy)
 
-            print(f"{i_epoch} / {cfg.epoch}: loss = {totalLoss / len(trainLoader)}  total loss = {totalLoss}")
-            print(f'\ttrain Succ/Prec: {Success_train.average:.1f}/{Precision_train.average:.1f}')
+                trainBar.set_description(
+                    f"train {i_epoch}/{cfg.epoch}: [loss: {totalLoss / len(trainLoader):.3f} tot_loss: {totalLoss:.3f}]"
+                    f"[Succ/Prec: {Success_train.average:.1f}/{Precision_train.average:.1f}]"
+                )
+
+            # print(f"{i_epoch} / {cfg.epoch}: loss = {totalLoss / len(trainLoader)}  total loss = {totalLoss}")
+            # print(f'\ttrain Succ/Prec: {Success_train.average:.1f}/{Precision_train.average:.1f}')
 
             Success_train.reset()
             Precision_train.reset()
@@ -189,6 +196,7 @@ if __name__ == "__main__":
 
             model.eval()
             validLoss = 0
+            validBar = tqdm(validLoader)
             for batch in validLoader:
                 with torch.no_grad():
                     res, sample_idxs = model(batch)
@@ -209,8 +217,13 @@ if __name__ == "__main__":
                 Success_valid.add_overlap(overlap)
                 Precision_valid.add_accuracy(accuracy)
 
-            print(f'\t\t\t\t\tValid {i_epoch}: loss = {validLoss / len(validLoader)}  total loss = {validLoss}')
-            print(f'\t\t\t\t\t\tvalid Succ/Prec: {Success_valid.average:.1f}/{Precision_valid.average:.1f}')
+                validBar.set_description(
+                    f"valid {i_epoch}/{cfg.epoch}: [loss: {totalLoss / len(validLoader):.3f} tot_loss: {totalLoss:.3f}]"
+                    f"[Succ/Prec: {Success_valid.average:.1f}/{Precision_valid.average:.1f}]"
+                )
+
+            # print(f'\t\t\t\t\tValid {i_epoch}: loss = {validLoss / len(validLoader)}  total loss = {validLoss}')
+            # print(f'\t\t\t\t\t\tvalid Succ/Prec: {Success_valid.average:.1f}/{Precision_valid.average:.1f}')
 
             if bestAcc < Precision_valid.average:
                 bestAcc = Precision_valid.average

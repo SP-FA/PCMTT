@@ -17,6 +17,7 @@ workers: 12
 box_enlarge_scale: 1.25
 
 # model
+use_repSurf: True
 backbone: dgn
 
 # train
