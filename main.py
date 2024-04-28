@@ -135,7 +135,7 @@ if __name__ == "__main__":
         train = KITTI_Loader(trainData, cfg)
         valid = KITTI_Loader(validData, cfg)
 
-    trainLoader = DataLoader(train, batch_size=cfg.batch_size, num_workers=cfg.workers, pin_memory=True, shuffle=True)
+    trainLoader = DataLoader(train, batch_size=cfg.batch_size, num_workers=cfg.workers, pin_memory=True, shuffle=True, drop_last=True)
     validLoader = DataLoader(valid, batch_size=1             , num_workers=cfg.workers, pin_memory=True)
 
     if cfg.test is False:
@@ -174,8 +174,8 @@ if __name__ == "__main__":
                 Precision_train.add_accuracy(accuracy)
 
                 trainBar.set_description(
-                    f"train {i_epoch}/{cfg.epoch}: [loss: {totalLoss / len(trainLoader):.3f} tot_loss: {totalLoss:.3f}]"
-                    f"[Succ/Prec: {Success_train.average:.1f}/{Precision_train.average:.1f}]"
+                    f"train {i_epoch}/{cfg.epoch}: [loss: {totalLoss / len(trainLoader):.3f}]"
+                    f"[S/P: {Success_train.average:.1f}/{Precision_train.average:.1f}]"
                 )
 
             # print(f"{i_epoch} / {cfg.epoch}: loss = {totalLoss / len(trainLoader)}  total loss = {totalLoss}")
@@ -197,7 +197,7 @@ if __name__ == "__main__":
             model.eval()
             validLoss = 0
             validBar = tqdm(validLoader)
-            for batch in validLoader:
+            for batch in validBar:
                 with torch.no_grad():
                     res, sample_idxs = model(batch)
                     loss = criterion(batch, res, sample_idxs)
@@ -218,8 +218,8 @@ if __name__ == "__main__":
                 Precision_valid.add_accuracy(accuracy)
 
                 validBar.set_description(
-                    f"valid {i_epoch}/{cfg.epoch}: [loss: {totalLoss / len(validLoader):.3f} tot_loss: {totalLoss:.3f}]"
-                    f"[Succ/Prec: {Success_valid.average:.1f}/{Precision_valid.average:.1f}]"
+                    f"valid {i_epoch}/{cfg.epoch}: [loss: {validLoss / len(validLoader):.3f}]"
+                    f"[S/P: {Success_valid.average:.1f}/{Precision_valid.average:.1f}]"
                 )
 
             # print(f'\t\t\t\t\tValid {i_epoch}: loss = {validLoss / len(validLoader)}  total loss = {validLoss}')

@@ -12,6 +12,7 @@ class BaseDataset:
 		self._split = split
 		self._coordinate_mode = cfg.coordinate_mode
 		self._preloading = cfg.preloading
+		self._category_name = cfg.category_name
 
 	@property
 	def num_scenes(self):

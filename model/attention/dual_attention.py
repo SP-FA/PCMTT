@@ -2,9 +2,31 @@ import torch
 from torch import nn
 
 
+class PositionEmbedding(nn.Module):
+    """
+    Absolute pos embedding, learned.
+    """
+
+    def __init__(self, input_channel=3, num_pos_feats=256):
+        super().__init__()
+        self.embedding = nn.Sequential(
+            nn.Conv1d(input_channel, num_pos_feats, kernel_size=1),
+            nn.BatchNorm1d(num_pos_feats),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(num_pos_feats, num_pos_feats, kernel_size=1))
+
+    def forward(self, xyz):
+        """
+        Args:
+            xyz (tensor): [B, 3, N]
+        """
+        return self.embedding(xyz)
+
+
 class DualAttention(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer=nn.BatchNorm1d):
         super(DualAttention, self).__init__()
+        self.embed = PositionEmbedding()
         inter_channels = in_channels // 4
         self.conv5a = nn.Sequential(nn.Conv1d(in_channels, inter_channels, 3, padding=1, bias=False),
                                     norm_layer(inter_channels),
@@ -27,7 +49,10 @@ class DualAttention(nn.Module):
         self.conv7 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
         self.conv8 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
 
-    def forward(self, x):
+    def forward(self, x, xyz):
+        pos = self.embed(xyz)
+        x = x + pos
+
         feat1 = self.conv5a(x)
         sa_feat = self.sa(feat1)
         sa_conv = self.conv51(sa_feat)

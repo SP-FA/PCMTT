@@ -26,12 +26,12 @@ class SearchAreaFeatExtraction(nn.Module):
             Tensor[B, D2=256, P2]
         """
         if self.cfg.backbone.lower() == "dgn":
-            output = self.backbone(x)  # [B, D1, P2]
-            output = output.permute(0, 2, 1)
             xyz = x[:, :3, :]
-            return xyz.permute(0, 2, 1), self.att(output), torch.tensor(list(range(x.shape[-1]))).repeat(x.shape[0], 1).to(self.cfg.device)
+            x = self.backbone(x)  # [B, D1, P2]
+            x = x.permute(0, 2, 1)
+            return xyz.permute(0, 2, 1), self.att(x, xyz), torch.tensor(list(range(x.shape[-1]))).repeat(x.shape[0], 1).to(self.cfg.device)
         else:
             N = x.shape[-1]
             x = x.permute(0, 2, 1)
             xyz, feat, sample_idxs = self.backbone(x, [N // 2, N // 4, N // 8])  # feature: [B, 256, P3]
-            return xyz, self.att(feat), sample_idxs  # [B, 256, P3]
+            return xyz, self.att(feat, xyz), sample_idxs  # [B, 256, P3]

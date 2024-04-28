@@ -40,7 +40,7 @@ class PGNN(nn.Module):
             self.repSurf = RepSurfUmbrella(cfg=cfg)
 
         if cfg.backbone.lower() == "dgn":
-            self.backbone = DGN(dim)
+            self.backbone = DGN(dim, k=cfg.dgn_k)
         else:
             self.backbone = Pointnet2(cfg.use_fps, cfg.normalize_xyz, input_channels)  # [B, 256, P3]
 
@@ -50,10 +50,10 @@ class PGNN(nn.Module):
 
     def forward(self, data):
         temp = data["template"].to(self.device)
-        box = data["boxCloud"].to(self.device)
+        box = None  # data["boxCloud"].to(self.device)
         area = data["searchArea"].to(self.device)
 
-        if self.usrRepSurf:
+        if self.useRepSurf:
             temp = self.repSurf(temp)
             area = self.repSurf(area)
 

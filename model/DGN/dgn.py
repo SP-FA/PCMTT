@@ -81,7 +81,7 @@ class EdgeConv(nn.Module):
             x Tensor[B, C, N]: 归一化过的点云
 
         Returns:
-            Tensor[B, N, C]
+            Tensor[B, C, N]
         """
         x_neighbour = get_graph_feature(x, self.k)  # [B, N, k, C]
         x = x.permute(0, 2, 1)  # [B, N, C]

@@ -14,7 +14,7 @@ class TemplateFeatExtraction(nn.Module):
         self.mlp = nn.Conv1d(256 + 9, out_channel, kernel_size=1)  # [B, D2 + D3, P1] -> [B, D2, P1]
         self.att = DualAttention(out_channel, out_channel)
 
-    def forward(self, template, boxCloud):
+    def forward(self, x, boxCloud):
         """Input templates and boxClouds
         Args:
             template Tensor[B, D1, P1]
@@ -24,14 +24,15 @@ class TemplateFeatExtraction(nn.Module):
             Tensor[B, D2, P1]
         """
         if self.cfg.backbone.lower() == "dgn":
-            x = self.backbone(template)  # [B, D2, P1]
+            xyz = x[:, :3, :]  # [B, 3, N]
+            x = self.backbone(x)  # [B, D2, P1]
             x = x.permute(0, 2, 1)
-            return self.att(x)
+            return self.att(x, xyz)
         else:
-            N = template.shape[-1]
-            template = template.permute(0, 2, 1)
-            xyz, feat, sample_idxs = self.backbone(template, [N // 2, N // 4, N // 8])  # feature: [B, 256, P1]
-            return self.att(feat)
+            N = x.shape[-1]
+            x = x.permute(0, 2, 1)
+            xyz, feat, sample_idxs = self.backbone(x, [N // 2, N // 4, N // 8])  # feature: [B, 256, P1]
+            return self.att(feat, xyz)
 
         # 拼接 box cloud
         # x = torch.cat([x, boxCloud], dim=-1)  # [B, P1, D2 + D3]

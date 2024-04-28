@@ -86,7 +86,15 @@ class KITTI_Util(BaseDataset):
                              names=["frame", "track_id", "type", "truncated", "occluded",
                                     "alpha", "bbox_left", "bbox_top", "bbox_right", "bbox_bottom",
                                     "height", "width", "length", "x", "y", "z", "rotation_y"])
-            df = df[df["type"] != 'DontCare']
+            if self._category_name in ['Car', 'Van', 'Pedestrian', 'Cyclist']:
+                df = df[df["type"] == self._category_name]
+            elif self._category_name == 'All':
+                df = df[(df["type"] == 'Car') |
+                        (df["type"] == 'Van') |
+                        (df["type"] == 'Pedestrian') |
+                        (df["type"] == 'Cyclist')]
+            else:
+                df = df[df["type"] != 'DontCare']
             df.insert(loc=0, column="scene", value=scene)
             for trackID in df.track_id.unique():
                 df_traj = df[df["track_id"] == trackID]

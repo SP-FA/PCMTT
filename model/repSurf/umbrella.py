@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
-import numpy as np
 
-from models.PCMTT.model.DGN.knn import knn, get_graph_feature
-from models.PCMTT.model.repSurf.coordinate_util import cartesian2polar, cal_normal, cal_center, cal_constant, check_nan
+from model.DGN.knn import get_graph_feature
+from model.repSurf.coordinate_util import cartesian2polar, cal_normal, cal_center, cal_constant, check_nan
 
 
 class RepSurfUmbrella(nn.Module):
