@@ -38,9 +38,15 @@ class RPN(nn.Module):
 
     def forward(self, xyz, feature):
         """
-        :param xyz: B,N,3
-        :param feature: B,f,N
-        :return: B,N,4+1 (xyz, theta, target score)
+        Args:
+            xyz (tensor): [B, N, 3]
+            feature (tensor): [B, N, C]
+
+        Return:
+            tensor: [B, N, 5], xyz, theta, score
+            tensor: [B, N, 1], class
+            tensor: [B, M, 3], vote points xyz
+            tensor: [B, M, 3], clust center estimated by vote points
         """
         estimation_cla = self.FC_layer_cla(feature).squeeze(1)
         score = estimation_cla.sigmoid()

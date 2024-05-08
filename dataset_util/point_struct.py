@@ -98,7 +98,7 @@ class BasePointCloud:
             center (bool): 是否使点的中心在原点处
 
         Returns:
-            WaterScene_PointCloud | KITTI_PointCloud: 在 box 内的点云，未进行 normalize
+            KITTI_PointCloud: 在 box 内的点云，未进行 normalize
             Tensor[N, 9]: box cloud 向量，对于每个点，返回相对于 box 8 个 corner + 中心点 的距离
             Optional[Tensor[N]]: 返回一个 bool 向量，在 box 内的 point id 为 true
         """
@@ -166,41 +166,6 @@ class BasePointCloud:
                 (self.points[:3, :], np.ones(self.n()))
             )
         )
-
-
-class WaterScene_PointCloud(BasePointCloud):
-    """适用于 WaterScene 数据集的点云数据结构
-    """
-    def __init__(self, points):
-        """
-        Args:
-            points (np.array[dim, n]) # dim=8 是点云维度 [x, y, z, range, azimuth, elevation, rcs, doppler]
-        """
-        super().__init__(points, 8)
-
-    @classmethod
-    def from_file(cls, fileName):
-        if fileName.endswith(".csv"):
-            points = cls.load_csv(fileName)
-        else:
-            raise ValueError(f"Unsupported filetype {fileName}. Only supported .pcd file")
-        return cls(points)
-
-    @staticmethod
-    def load_csv(fileName):
-        df = pd.read_csv(fileName)
-        df = df[["x", "y", "z", "range", "azimuth", "elevation", "rcs", "doppler"]]
-        points = df.to_numpy()
-
-        x = copy.deepcopy(points[:, 0])
-        y = copy.deepcopy(points[:, 1])
-        z = copy.deepcopy(points[:, 2])
-        points[:, 0] = -z
-        points[:, 1] =  x
-        points[:, 2] = -y
-        points = points.transpose()
-        return points.reshape((8, -1))
-    # TODO: 归一化
 
 
 class KITTI_PointCloud(BasePointCloud):

@@ -3,7 +3,6 @@ import argparse
 import unittest
 from easydict import EasyDict
 from dataset_util.kitti import KITTI_Util
-from dataset_util.waterscene import WaterScene_Util
 
 
 def load_yaml(file_name):
@@ -40,23 +39,6 @@ class MyTestCase(unittest.TestCase):
                 f = kitti.frames(i, [j])
                 pc = f[0]['pc']
                 print(f"{i} {j} {pc.points.shape}")
-
-
-    def test_waterscene(self):
-        cfg = parse_config()
-        cfg.preloading = False
-        water = WaterScene_Util(cfg)
-        print(water.num_scenes)
-        print(water.num_frames)
-        print(water.num_trajectory)
-        print(water.num_frames_trajectory(0))
-        # print(water.frames(1, [0]))
-
-        f = water.frames(1, [0])
-        p = f[0]['pc']
-        b = f[0]['3d_bbox']
-        p2, _ = p.points_in_box(b)
-        print(p2.points.shape)
 
 
 if __name__ == '__main__':

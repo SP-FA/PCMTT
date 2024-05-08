@@ -11,10 +11,8 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from dataset_loader.kitti_loader import KITTI_Loader
-from dataset_loader.waterScene_loader import WaterScene_Loader
 from dataset_util.box_struct import Box
 from dataset_util.kitti import KITTI_Util
-from dataset_util.waterscene import WaterScene_Util
 from model.PGNN import PGNN
 from metrics import Success, Precision
 from metrics import estimateOverlap, estimateAccuracy
@@ -31,7 +29,7 @@ def load_yaml(file_name):
 
 def parse_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default="./config/PGNN_WaterScene.yaml", help='the config_file')
+    parser.add_argument('--cfg', type=str, default="./config/PGNN_KITTI.yaml", help='the config_file')
     parser.add_argument('--test', action='store_true', default=False, help='test mode')
     parser.add_argument('--preloading', action='store_true', default=False, help='preload dataset into memory')
     parser.add_argument('--device', default="cuda:0")
@@ -124,12 +122,7 @@ if __name__ == "__main__":
     else:
         optim = Adam(model.parameters(), lr=cfg.lr, betas=(0.5, 0.999), eps=1e-06)  # , weight_decay=cfg.wd
 
-    if cfg.dataset.lower() == "waterscene":
-        trainData = WaterScene_Util(cfg, cfg.train_split)
-        validData = WaterScene_Util(cfg, cfg.valid_split)
-        train = WaterScene_Loader(trainData, cfg)
-        valid = WaterScene_Loader(validData, cfg)
-    elif cfg.dataset.lower() == "kitti":
+    if cfg.dataset.lower() == "kitti":
         trainData = KITTI_Util(cfg, cfg.train_split)
         validData = KITTI_Util(cfg, cfg.valid_split)
         train = KITTI_Loader(trainData, cfg)

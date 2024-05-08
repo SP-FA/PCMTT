@@ -23,6 +23,22 @@ class PositionEmbedding(nn.Module):
         return self.embedding(xyz)
 
 
+class AddNorm(nn.Module):
+    def __init__(self, dim):
+        super(AddNorm, self).__init__()
+        self.dim = dim
+
+        self.norm = nn.LayerNorm(dim)
+        self.dropout = nn.Dropout(0.1)
+
+    def forward(self, input, x):
+        res = self.dropout(input) + x
+        shapeList = res.shape
+        res = res.view(-1, self.dim)
+        res = self.norm(res)
+        return res.view(shapeList)
+
+
 class DualAttention(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer=nn.BatchNorm1d):
         super(DualAttention, self).__init__()
@@ -48,19 +64,24 @@ class DualAttention(nn.Module):
         self.conv6 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
         self.conv7 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
         self.conv8 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
+        self.addnorm_sa1 = AddNorm(inter_channels)
+        self.addnorm_sa2 = AddNorm(out_channels)
+        self.addnorm_sc1 = AddNorm(inter_channels)
+        self.addnorm_sc2 = AddNorm(out_channels)
 
     def forward(self, x, xyz):
-        pos = self.embed(xyz)
-        x = x + pos
-
         feat1 = self.conv5a(x)
         sa_feat = self.sa(feat1)
+        sa_feat = self.addnorm_sa1(sa_feat, feat1)
         sa_conv = self.conv51(sa_feat)
+        # sa_conv = self.addnorm_sa2(sa_conv, sa_feat)
         sa_output = self.conv6(sa_conv)
 
         feat2 = self.conv5c(x)
         sc_feat = self.sc(feat2)
+        sc_feat = self.addnorm_sc1(sc_feat, feat2)
         sc_conv = self.conv52(sc_feat)
+        # sc_conv = self.addnorm_sc2(sc_conv, sc_feat)
         sc_output = self.conv7(sc_conv)
 
         feat_sum = sa_conv + sc_conv
@@ -83,31 +104,25 @@ class PositionAttention(nn.Module):
     def forward(self, x1, x2=None):
         """
         Args:
-            x1 Tensor[B, C, P1]: q, v, Template
-            x2 Tensor[B, C, P3]: k, SearchArea
+            x1 Tensor[B, C, P1]: k, v, Template
+            x2 Tensor[B, C, P2]: q, SearchArea
         """
         B, C, P1 = x1.size()
-        q = self.Q(x1).view(B, -1, P1).permute(0, 2, 1)  # [B, P1, C]
-        v = self.V(x1).view(B, C, P1)  # [B, C, P1]
+        k = self.K(x1).view(B, -1, P1)  # [B, C, P1]
+        v = self.V(x1).view(B, -1, P1)  # [B, C, P1]
         if x2 is None:
-            k = self.K(x1).view(B, -1, P1)
+            q = self.Q(x1).view(B, -1, P1).permute(0, 2, 1)  # [B, P1, C]
         else:
             B, C, P2 = x2.size()
-            k = self.K(x2).view(B, -1, P2)  # [B, C, P3]
+            q = self.Q(x2).view(B, -1, P2).permute(0, 2, 1)  # [B, P2, C]
 
         energy = torch.bmm(q, k)  # [B, P1, P3]
         attention = self.softmax(energy)
-
-        if x2 is None:
-            out = torch.bmm(v, attention.permute(0, 2, 1))  # [B, C, P1]
-            out = out.view(B, C, P1)
-        else:
-            out = torch.bmm(v, attention)  # [B, C, P3]
-            out = out.view(B, C, P2)
+        out = torch.bmm(v, attention.permute(0, 2, 1))  # [B, C, P2]
 
         if x2 is not None:
-            return self.alpha * out + x2
-        return self.alpha * out + x1
+            return x2
+        return x1
 
 
 class ChannelAttention(nn.Module):
@@ -115,18 +130,20 @@ class ChannelAttention(nn.Module):
         super(ChannelAttention, self).__init__()
         self.chanel_in = dim
 
+        self.Q = nn.Conv1d(in_channels=dim, out_channels=dim, kernel_size=1)
+        self.K = nn.Conv1d(in_channels=dim, out_channels=dim, kernel_size=1)
+        self.V = nn.Conv1d(in_channels=dim, out_channels=dim, kernel_size=1)
+
         self.alpha = nn.Parameter(torch.zeros(1))
         self.softmax  = nn.Softmax(dim=-1)
 
     def forward(self, x):
         B, C, P = x.size()
-        q = x.view(B, C, -1)
-        k = x.view(B, C, -1).permute(0, 2, 1)
-        v = x.view(B, C, -1)
-        energy = torch.bmm(q, k)
-        invEnergy = torch.max(energy, -1, keepdim=True)[0].expand_as(energy) - energy  # prevent loss divergence
-        attention = self.softmax(invEnergy)
+        q = self.Q(x).view(B, -1, P)  # [B, C, P1]
+        v = self.V(x).view(B, -1, P)  # [B, C, P1]
+        k = self.K(x).view(B, -1, P).permute(0, 2, 1)  # [B, P1, C]
 
+        energy = torch.bmm(q, k)
+        attention = self.softmax(energy)
         out = torch.bmm(attention, v)
-        out = out.view(B, C, P)
-        return self.alpha * out + x
+        return x

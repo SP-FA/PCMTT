@@ -11,8 +11,8 @@ from dataset_util.point_struct import KITTI_PointCloud
 
 
 class KITTI_Loader(BaseLoader):
-    """暂时只适配 kitti 数据集，适配 PGNN 算法，template 和 searchArea 随机采样。
-        """
+    """暂时只适配 kitti 数据集，适配 PGNN 算法。
+    """
     def __init__(self, data, cfg):
         super(KITTI_Loader, self).__init__(data, cfg)
         self.fullArea = cfg.full_area

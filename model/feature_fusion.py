@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from model.attention.cross_attention import CrossAttention
-from model.filter.kalman_filter import KalmanFilter
+# from model.filter.kalman_filter import KalmanFilter
 from model.vote_net.rpn import RPN
 
 
@@ -9,10 +9,10 @@ class FeatureFusion(nn.Module):
     def __init__(self, in_channels, cfg):
         super(FeatureFusion, self).__init__()
         self.att = CrossAttention(in_channels, in_channels)
-        self.kal = KalmanFilter()
+        # self.kal = KalmanFilter()
         self.rpn = RPN(in_channels, normalize_xyz=cfg.normalize_xyz)
-        self.prevB = None
-        self.prevV = None
+        # self.prevB = None
+        # self.prevV = None
 
     def forward(self, x1, x2, xyz):
         """
@@ -44,12 +44,6 @@ class FeatureFusion(nn.Module):
         finalBoxID = torch.argmax(predBox[..., -1], dim=1).view(-1, 1)
         finalBox = torch.gather(predBox, 1, finalBoxID.unsqueeze(-1).expand(-1, -1, predBox.size(-1)))
         finalBox = finalBox.squeeze(1)
-
-        assert torch.any(torch.isnan(predBox)) == torch.tensor(False)
-        assert torch.any(torch.isnan(predSeg)) == torch.tensor(False)
-        assert torch.any(torch.isnan(vote_xyz)) == torch.tensor(False)
-        assert torch.any(torch.isnan(center_xyz)) == torch.tensor(False)
-        assert torch.any(torch.isnan(finalBox)) == torch.tensor(False)
 
         # bestBoxID = torch.argmax(predBox[:, 4])  # [B, 1]
         # bestBox = predBox[bestBoxID]
