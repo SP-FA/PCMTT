@@ -65,9 +65,9 @@ class DualAttention(nn.Module):
         self.conv7 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
         self.conv8 = nn.Sequential(nn.Dropout1d(0.1, False), nn.Conv1d(inter_channels, out_channels, 1))
         self.addnorm_sa1 = AddNorm(inter_channels)
-        self.addnorm_sa2 = AddNorm(out_channels)
         self.addnorm_sc1 = AddNorm(inter_channels)
-        self.addnorm_sc2 = AddNorm(out_channels)
+        # self.addnorm_sa2 = AddNorm(out_channels)
+        # self.addnorm_sc2 = AddNorm(out_channels)
 
     def forward(self, x, xyz):
         feat1 = self.conv5a(x)
@@ -75,18 +75,17 @@ class DualAttention(nn.Module):
         sa_feat = self.addnorm_sa1(sa_feat, feat1)
         sa_conv = self.conv51(sa_feat)
         # sa_conv = self.addnorm_sa2(sa_conv, sa_feat)
-        sa_output = self.conv6(sa_conv)
+        # sa_output = self.conv6(sa_conv)
 
         feat2 = self.conv5c(x)
         sc_feat = self.sc(feat2)
         sc_feat = self.addnorm_sc1(sc_feat, feat2)
         sc_conv = self.conv52(sc_feat)
         # sc_conv = self.addnorm_sc2(sc_conv, sc_feat)
-        sc_output = self.conv7(sc_conv)
+        # sc_output = self.conv7(sc_conv)
 
         feat_sum = sa_conv + sc_conv
-        sasc_output = self.conv8(feat_sum)
-        return sasc_output
+        return self.conv8(feat_sum)
 
 
 class PositionAttention(nn.Module):
